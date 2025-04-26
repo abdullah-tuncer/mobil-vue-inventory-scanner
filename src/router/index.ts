@@ -1,0 +1,59 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import Anasayfa from '../components/Anasayfa.vue'
+import Ayarlar from '../components/Ayarlar.vue'
+import BarkodTarayici from '../components/BarkodTarayici.vue'
+import BarkodOlusturucu from '../components/BarkodOlusturucu.vue'
+import Envanter from '../components/Envanter.vue'
+import Satis from '../components/Satis.vue'
+import UrunEkle from "../components/UrunEkle.vue";
+import Urun from "../components/Urun.vue";
+
+const routes = [
+  {
+    path: '/',
+    name: 'Anasayfa',
+    component: Anasayfa
+  },
+  {
+    path: '/ayarlar',
+    name: 'Ayarlar',
+    component: Ayarlar
+  },
+  {
+    path: '/barkod-tarayici',
+    name: 'BarkodTarayici',
+    component: BarkodTarayici
+  },
+  {
+    path: '/barkod-olusturucu',
+    name: 'BarkodOlusturucu',
+    component: BarkodOlusturucu
+  },
+  {
+    path: '/envanter',
+    name: 'Envanter',
+    component: Envanter
+  },
+  {
+    path: '/satis',
+    name: 'Satis',
+    component: Satis
+  },
+  {
+    path: '/urun-ekle',
+    name: 'UrunEkle',
+    component: UrunEkle
+  },
+  {
+    path: '/urun/:id',
+    name: 'Urun',
+    component: Urun
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+export default router
