@@ -1,6 +1,6 @@
 <template>
   <v-row class="ma-auto">
-    <v-col cols="12">
+    <v-col cols="12" class="py-0">
       <h2>Ürün Ekle</h2>
     </v-col>
     <v-col cols="12">
@@ -68,7 +68,7 @@
         <v-card-actions>
           <v-row>
             <v-col cols="6">
-              <v-btn @click="" color="secondary" block>Vazgeç</v-btn>
+              <v-btn @click="router.back()" color="secondary" block>Vazgeç</v-btn>
             </v-col>
             <v-col cols="6">
               <v-btn @click="save" color="primary" block>Kaydet</v-btn>

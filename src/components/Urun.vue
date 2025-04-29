@@ -1,106 +1,197 @@
 <template>
   <v-row class="ma-auto">
-    <v-col cols="10">
-      <h2>{{ urun.ad }}</h2>
+    <v-col cols="10" class="py-0">
+      <h2>
+        <v-btn @click="router.back()" variant="text" icon="mdi-arrow-left" class="mt-n1 ml-n4"/>
+        {{ urun.ad }}
+      </h2>
     </v-col>
-    <v-col align="right" cols="2">
-      <v-btn v-if="!duzenleAktif" @click="duzenleAktif=true" icon="mdi-pen" variant="text" class="mt-n2 mr-n2"/>
+    <v-col align="right" cols="2" class="py-0">
+      <v-btn v-if="!duzenleAktif" @click="duzenleAktif=true" icon="mdi-pen" variant="text" class="mt-n1 mr-n2"/>
     </v-col>
     <v-col cols="12">
-      <v-card>
-        <v-card-actions v-if="duzenleAktif">
+      <v-card v-if="duzenleAktif">
+        <v-card-actions>
           <v-row>
             <v-col cols="6">
-              <v-btn @click="duzenleAktif=false" color="secondary" block>Vazgeç</v-btn>
+              <v-btn @click="cancel" color="secondary" block>Vazgeç</v-btn>
             </v-col>
             <v-col cols="6">
-              <v-btn @click="duzenleAktif=false" color="primary" block>Kaydet</v-btn>
+              <v-btn @click="save" color="primary" block>Kaydet</v-btn>
             </v-col>
           </v-row>
         </v-card-actions>
         <v-row class="ma-auto">
           <v-col cols="12">
-            <span v-if="!duzenleAktif">
-            <v-label>Ad:</v-label>
-            {{ urun.ad }}
-            </span>
             <v-text-field
-                v-else
-                v-model="urun.ad"
+                v-model="urunDuzenle.ad"
                 :rules="[v=>!!v||'Lütfen burayı doldurun.']"
                 label="Ad"
             />
           </v-col>
           <v-col cols="12">
-            <span v-if="!duzenleAktif">
-            <v-label>Açıklama:</v-label>
-            <br>
-            {{ urun.aciklama }}
-            </span>
             <v-textarea
-                v-else
-                v-model="urun.aciklama"
+                v-model="urunDuzenle.aciklama"
                 label="Açıklama"
             />
           </v-col>
-          <v-col v-if="!duzenleAktif" cols="6">
-            <v-label>Fiyat:</v-label>
-            {{ urun.fiyat }}₺
-          </v-col>
-          <v-col cols="6" v-if="urun.indirimli_fiyat && !duzenleAktif">
-            <v-label>İndirimli Fiyat:</v-label>
-            {{ urun.indirimli_fiyat }}₺
-          </v-col>
-          <v-col v-if="duzenleAktif" cols="12">
+          <v-col cols="12">
             <v-text-field
-                v-model="urun.fiyat"
+                v-model="urunDuzenle.fiyat"
                 :rules="[v=>!!v||'Lütfen burayı doldurun.']"
                 label="Fiyat"
                 type="number"
             />
           </v-col>
-          <v-col v-if="duzenleAktif" cols="12">
+          <v-col cols="12">
             <v-label>İndirim Uygula</v-label>
+            <br>
             <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
               <v-btn>Yok</v-btn>
               <v-btn>%10</v-btn>
               <v-btn>%25</v-btn>
               <v-btn>%50</v-btn>
-              <v-btn>Özel</v-btn>
             </v-btn-toggle>
             <v-text-field
-                v-model="urun.indirimli_fiyat"
+                v-model="urunDuzenle.indirimli_fiyat"
                 label="İndirimli Fiyat"
                 type="number"
                 class="my-2"
+                hide-details
             />
           </v-col>
           <v-col cols="12">
+            <v-alert variant="outlined" type="info">
+              Bazı ürünlerde barkod bulunmayabilir. Bu durumda, uygulamanın tanıyabileceği özel bir barkod oluşturabilirsiniz.
+              Oluşturduğunuz barkodu yazdırabilir ve ürüne yapıştırabilirsiniz. Bu barkod, ürünü hızlıca taramanıza ve bulmanıza yardımcı olacaktır.
 
-            <v-btn v-if="duzenleAktif" prepend-icon="mdi-barcode-scan" rounded="1" variant="outlined" block>Barkod
-              Ekle
+              <v-btn @click="createCustomBarcode" prepend-icon="mdi-barcode" rounded="1" variant="outlined" block>
+                Özel Barkod Oluştur
+              </v-btn>
+            </v-alert>
+
+
+          </v-col>
+          <v-col cols="12">
+            <v-btn @click="addBarcode" prepend-icon="mdi-barcode-scan" rounded="1" variant="outlined" block>
+              Barkod Ekle
             </v-btn>
             <v-card
-                :variant="duzenleAktif? 'outlined':'elevated'"
-                :color="duzenleAktif? 'primary':undefined"
                 class="border-t-0 rounded-t-0 mx-3"
+                variant="outlined"
+                color="primary"
             >
               <v-list>
-                <v-list-item>
+                <v-list-item v-if="filteredBarkodlar.lenght>0" v-for="(barkod,index) in filteredBarkodlar">
                   <v-list-item-title>
-                    8690000000059
+                    {{ barkod.data }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
-                    EAN13
+                    {{ barkod.type }}
                   </v-list-item-subtitle>
-                  <template #append v-if="duzenleAktif">
-                    <v-icon>mdi-close</v-icon>
+                  <template #append>
+                    <v-icon @click="removeBarcode(index)">mdi-close</v-icon>
                   </template>
+                </v-list-item>
+                <v-list-item v-else>
+                  <v-list-item-title>
+                    Ürüne tanımlı barkod bulunamadı.
+                  </v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-card>
           </v-col>
-          <v-col v-if="!duzenleAktif" cols="12">
+        </v-row>
+      </v-card>
+      <v-card v-else>
+        <v-row class="ma-auto">
+          <v-col cols="12">
+            <v-label>Ad:</v-label>
+            {{ urun.ad }}
+          </v-col>
+          <v-col cols="12">
+            <v-label>Açıklama:</v-label>
+            <br>
+            {{ urun.aciklama }}
+          </v-col>
+          <!--          <v-col cols="12">-->
+          <!--            <v-card variant="outlined" color="secondary" align="center">-->
+          <!--              <v-card-title class="pt-0">Fiyat</v-card-title>-->
+          <!--              <v-card-text>-->
+          <!--                <span v-if="urun.indirimli_fiyat" style="display: flex; justify-content: center; align-items: center">-->
+          <!--                  <h2 class="supsub pt-2">-->
+          <!--                    <sup>-->
+          <!--                      <del>{{ urun.fiyat + "₺" }}</del>-->
+          <!--                    </sup>-->
+          <!--                    <sub class="mt-2">-->
+          <!--                      <v-icon icon="mdi-arrow-down" size="x-small"/>%{{ indirimOrani(urun) }}-->
+          <!--                    </sub>-->
+          <!--                  </h2>-->
+          <!--                  <h1 class="ml-4">{{ urun.indirimli_fiyat }}₺</h1>-->
+          <!--                </span>-->
+          <!--                <h1 v-else>{{ urun.fiyat }}₺</h1>-->
+          <!--              </v-card-text>-->
+          <!--            </v-card>-->
+          <!--          </v-col>-->
+          <v-col cols="12">
+            <v-card variant="outlined" color="secondary" align="center">
+              <v-card-title class="pt-0">Fiyat</v-card-title>
+              <v-divider/>
+              <v-card-text>
+                <v-row v-if="urun.indirimli_fiyat">
+                  <v-col cols="4">
+                    <v-row >
+                      <v-col align-self="center" cols="12" class="border-e border-b">
+                        <h3>
+                          <del>{{ urun.fiyat }}₺</del>
+                        </h3>
+                      </v-col>
+                      <v-col align-self="center" cols="12" class="border-e">
+                        <h3>
+                          <v-icon icon="mdi-arrow-down" size="x-small"/>
+                          %{{ indirimOrani(urun) }}
+                        </h3>
+                      </v-col>
+                    </v-row>
+                  </v-col>
+                  <v-col align-self="center" cols="8">
+                    <h1>{{ urun.indirimli_fiyat }}₺</h1>
+                  </v-col>
+                </v-row>
+                <v-row v-else>
+                  <v-col align-self="center" cols="12">
+                    <h1>{{ urun.fiyat }}₺</h1>
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12">
+            <v-card variant="outlined" color="secondary">
+              <v-card-title class="pt-0" align="center">Barkodlar</v-card-title>
+              <v-divider/>
+              <v-list>
+                <v-list-item v-if="urun.barkodlar.length>0" v-for="barkod in urun.barkodlar">
+                  <v-list-item-title>
+                    {{ barkod.data }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    {{ barkod.type }}
+                  </v-list-item-subtitle>
+                  <template #append>
+                    <v-icon @click="">mdi-printer</v-icon>
+                  </template>
+                </v-list-item>
+                <v-list-item v-else>
+                  <v-list-item-title>
+                    Ürüne tanımlı barkod bulunamadı.
+                  </v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12">
             <v-tabs v-model="tab" align-tabs="center" grow>
               <v-tab value="tablo" prepend-icon="mdi-table"/>
               <v-tab value="grafik" prepend-icon="mdi-chart-line"/>
@@ -122,31 +213,157 @@
       </v-card>
     </v-col>
   </v-row>
+  <audio ref="beepSound" src="/beep.mp3" preload="auto"></audio>
 </template>
 
 <script setup lang="ts">
 
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
+import {useRoute, useRouter} from "vue-router";
+import inventoryService, {Tables} from "../services/inventoryService.ts";
+import {BarcodeScanner} from "@capacitor-mlkit/barcode-scanning";
 
+const router = useRouter();
+const route = useRoute();
 const duzenleAktif = ref(false);
 const tab = ref("tablo");
 
-const urun = ref({
-  id: 0,
-  ad: "Deneme",
-  aciklama: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut pellentesque, eros eget auctor viverra, metus mi semper leo, eu imperdiet lorem metus non leo. Nulla molestie augue nec tortor malesuada malesuada. Aenean accumsan magna in tortor convallis, vitae accumsan felis mollis. Fusce iaculis, urna tincidunt lacinia sagittis, tellus lorem feugiat elit, in pretium sem felis et dui. Aenean posuere quam commodo velit ornare, faucibus sagittis augue blandit. Donec ultrices viverra commodo. Nulla id enim sapien. Aenean lacus tortor, ultricies ut ex non, euismod condimentum sapien. Nullam ac metus ac ipsum lobortis iaculis eu nec nisi. Morbi ligula justo, rhoncus facilisis ullamcorper eget, semper in ex. Etiam sed leo et elit semper tincidunt at laoreet nunc.",
-  fiyat: 20,
-  indirimli_fiyat: 10,
-  created_at: "2024-02-26 13:01:35",
-  updated_at: undefined
-});
-
+const urun = ref<any>(null);
+const urunDuzenle = ref<any>(null);
 const headers = ref([
   {title: "Tarih", value: "created_at", key: "created_at"},
   {title: "Adet", value: "adet", key: "adet"},
   {title: "Tutar", value: "tutar", key: "tutar", align: "end" as const}
 ]);
 
+onMounted(async () => {
+  await load();
+})
+
+const load = async () => {
+  const id = route.params.id as string;
+  urun.value = await inventoryService.getItemById(Tables.URUNLER, id);
+  urunDuzenle.value = JSON.parse(JSON.stringify(urun.value));
+  if (urunDuzenle.value?.barkodlar) {
+    urunDuzenle.value.barkodlar.forEach((barkod: any) => barkod.isDeleted = false);
+  }
+}
+
+const indirimOrani = (urun: any) => {
+  let oran = indirimOraniHesapla(urun.fiyat, urun.indirimli_fiyat);
+  return Number(oran).toFixed(1);
+}
+
+// TODO: helpera eklenecek
+const indirimOraniHesapla = (fiyat: number, indirimli_fiyat: number): number => {
+  let oran = 100 - ((indirimli_fiyat / fiyat) * 100);
+  return oran;
+}
+
+const filteredBarkodlar = computed(() => {
+  if (!urunDuzenle.value?.barkodlar) return [];
+  return urunDuzenle.value.barkodlar.filter((barkod: any) => !barkod.isDeleted);
+});
+
+const removeBarcode = (index: number) => {
+  let barkod = filteredBarkodlar.value[index];
+  if (barkod.id) {
+    urunDuzenle.value.barkodlar.find((v: any) => v.id == barkod.id).isDeleted = true;
+  } else {
+    let findedIndex = urunDuzenle.value.barkodlar.findIndex((v: any) => v == barkod);
+    urunDuzenle.value.barkodlar.splice(findedIndex, 1);
+  }
+}
+
+// TODO: servis yapılmaya çalışılcak
+
+const addBarcode = async () => {
+  const granted = await requestPermissions();
+  if (!granted) {
+    // snackbar.value = true;
+    // TODO: toast eklenecek
+    console.log('granted', granted)
+    return;
+  }
+  const {barcodes} = await BarcodeScanner.scan();
+  if (barcodes.length > 0) {
+    playBeepSound(); // Barkod tarandığında bip sesi çal
+    urunDuzenle.value.barkodlar.push({type: barcodes[0].format, data: barcodes[0].rawValue, isDeleted: false});
+  }
+}
+
+const save = async () => {
+  try {
+    let barkodlar = [...urunDuzenle.value.barkodlar];
+    let newData = urunDuzenle.value;
+    delete newData.barkodlar;
+
+    console.log('newDAta', JSON.stringify(newData));
+    console.log('barkodlar', JSON.stringify(barkodlar));
+
+    await inventoryService.updateItem(Tables.URUNLER, newData);
+
+    const deletedBarkodlar = barkodlar.filter((b: any) => b.isDeleted && b.id);
+    for (const barkod of deletedBarkodlar) {
+      await inventoryService.deleteItem(Tables.BARKODLAR, barkod.id);
+    }
+
+    const newBarkodlar = barkodlar.filter((b: any) => !b.isDeleted && !b.id);
+    for (const barkod of newBarkodlar) {
+      await inventoryService.addItem(Tables.BARKODLAR, {
+        urun_id: newData.id,
+        data: barkod.data,
+        type: barkod.type,
+        created_at: new Date().toISOString()
+      });
+    }
+
+    await load();
+  } catch (e: any) {
+    console.error('Urun.vue - save :', e.message)
+  } finally {
+    duzenleAktif.value = false
+  }
+}
+
+const cancel = () => {
+  urunDuzenle.value = JSON.parse(JSON.stringify(urun.value));
+  if (urunDuzenle.value?.barkodlar) {
+    urunDuzenle.value.barkodlar.forEach((barkod: any) => barkod.isDeleted = false);
+  }
+  duzenleAktif.value = false;
+}
+
+// Bip sesi çalma fonksiyonu
+const beepSound = ref<HTMLAudioElement | null>(null);
+const playBeepSound = () => {
+  if (beepSound.value) {
+    beepSound.value.currentTime = 0;
+    beepSound.value.play().catch(err => {
+      console.error("Ses çalınamadı:", err);
+    });
+  }
+};
+
+const requestPermissions = async (): Promise<boolean> => {
+  const {camera} = await BarcodeScanner.requestPermissions();
+  return camera === 'granted' || camera === 'limited';
+};
+
+
+const createCustomBarcode = () => {
+  const timestamp = new Date().getTime();
+  const barcodeData = `C-${urunDuzenle.value.id}-${timestamp}`;
+  urunDuzenle.value.barkodlar.push({
+    data: barcodeData,
+    type: "CODE_128",
+    isDeleted: false
+  });
+};
+
+// *********
+
+// mock data
 const items = ref([
   {
     created_at: "2025-04-23T08:18:44.377Z",
@@ -169,14 +386,16 @@ const items = ref([
     tutar: 22
   }
 ]);
-
-onMounted(()=>{
-
-})
-
-
 </script>
 
 <style scoped>
+.supsub {
+  display: inline-block !important;
+}
 
+.supsub sup,
+.supsub sub {
+  position: relative !important;
+  display: block !important;
+}
 </style>

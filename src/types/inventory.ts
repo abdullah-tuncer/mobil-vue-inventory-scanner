@@ -9,7 +9,7 @@ export interface IUrun {
 }
 
 export interface IBarkod {
-    id: number;
+    id?: number;
     urun_id: number;
     data: string;
     type: string;

@@ -102,12 +102,19 @@ class InventoryService implements IInventoryService {
         }
     }
 
-    async getItemById<T extends keyof TableTypeMap>(table: T, id: number): Promise<TableTypeMap[T] | null> {
+    async getItemById<T extends keyof TableTypeMap>(table: T, id: number|string): Promise<TableTypeMap[T] | null> {
         if (!this.initialized) await this.initializeDatabase();
         try {
             const query = `SELECT * FROM ${table} WHERE id = ?`;
             const result = await this.db.query(query, [id]);
-            return result.values?.[0] || null;
+            let data = result.values?.[0] || null;
+            if (data && table == Tables.URUNLER) {
+                // Ürünün barkodlarını ekle
+                const barkodlarQuery = `SELECT * FROM ${Tables.BARKODLAR} WHERE urun_id = ?`;
+                const barkodlarResult = await this.db.query(barkodlarQuery, [id]);
+                data.barkodlar = barkodlarResult.values || [];
+            }
+            return data;
         } catch (error: any) {
             const msg = error.message ? error.message : error;
             throw new Error(`inventoryService.getItemById: ${msg}`);

@@ -1,6 +1,6 @@
 <template>
   <v-row class="ma-auto">
-    <v-col cols="12">
+    <v-col cols="12" class="py-0">
       <h2>Envanter Yönetimi</h2>
     </v-col>
     <v-col cols="12">
@@ -26,6 +26,7 @@
             <v-data-table
                 :headers="urunlerHeaders"
                 :items="urunlerItems"
+                @click:row="urunDetay"
             >
               <template #top>
                 <v-btn @click="router.push('urun-ekle')" block class="my-2" rounded="xs" prepend-icon="mdi-plus">
@@ -102,5 +103,10 @@ const load = async () => {
       updated_at: undefined
     }];
   }
+}
+
+//@ts-ignore
+const urunDetay = (event: Event, row:any) => {
+  router.push('/urun/'+row.item.id);
 }
 </script>
