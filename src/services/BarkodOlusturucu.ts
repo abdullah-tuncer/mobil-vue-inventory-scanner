@@ -4,27 +4,44 @@ import {Capacitor} from '@capacitor/core';
 import {Filesystem, Directory} from '@capacitor/filesystem';
 import {FileOpener} from "@capacitor-community/file-opener";
 
+
 export class BarkodOlusturucu {
     private barkodDegeri: string;
     private barkodTipi: string;
     private genislik: number;
+    private yaziOlsunMu: boolean;
+    private yazi: string;
+    private yaziBoyutu: number;
     private yukseklik: number;
     private marj: number;
     // Piksel başına inç (standart ekran DPI değeri)
     private readonly PPI: number = 96;
+    barkodCanvas: HTMLCanvasElement;
+    barkodGenislikMm!:number;
+    barkodYukseklikMm!:number;
 
     constructor(
         barkodDegeri: string,
         barkodTipi: string = 'EAN13',
-        genislik: number = 1,
-        yukseklik: number = 20,
-        marj: number = 2
+        boyut: "small" | "normal" = "normal",
+        yazi: "DEFAULT" | "NONE" | string = "DEFAULT",
+        marj: number = 2,
     ) {
-        this.barkodDegeri = barkodDegeri;
         this.barkodTipi = barkodTipi;
-        this.genislik = genislik;
-        this.yukseklik = yukseklik;
+        this.barkodDegeri = barkodDegeri;
+        this.yaziOlsunMu = yazi != "NONE";
+        this.yazi = yazi;
         this.marj = marj;
+        if (boyut == "small") {
+            this.genislik = 1;
+            this.yukseklik = 25;
+            this.yaziBoyutu = 10;
+        } else {
+            this.genislik = 2;
+            this.yukseklik = 50;
+            this.yaziBoyutu = 20;
+        }
+        this.barkodCanvas = this.barkodInit();
     }
 
     /**
@@ -39,6 +56,35 @@ export class BarkodOlusturucu {
     }
 
     /**
+     * Barkod tipini uygun tipe çevirir
+     * @params barkodTipi denetlenecek tip
+     * @returns uygun barkod tipi
+     */
+    private tipDonusturucu(barkodTipi: string): string {
+        return barkodTipi.replace("_", "");
+    }
+
+    public barkodInit(): HTMLCanvasElement {
+        // Örnek bir barkod oluşturup boyutlarını alalım
+        const ornekCanvas = document.createElement('canvas');
+        let options: JsBarcode.Options = {
+            format: this.tipDonusturucu(this.barkodTipi),
+            width: this.genislik,
+            height: this.yukseklik,
+            displayValue: this.yaziOlsunMu,
+            fontSize: this.yaziBoyutu,
+            margin: 0
+        };
+        if (this.yaziOlsunMu && this.yazi != "DEFAULT")
+            options.text = this.yazi;
+        JsBarcode(ornekCanvas, this.barkodDegeri, options);
+        this.barkodCanvas = ornekCanvas;
+        this.barkodGenislikMm = this.pixelToMm(ornekCanvas.width);
+        this.barkodYukseklikMm = this.pixelToMm(ornekCanvas.height);
+        return ornekCanvas;
+    }
+
+    /**
      * Belirtilen sayıda barkodu içeren PDF oluşturur ve indirir
      * @param adet Kaç adet barkod oluşturulacağı
      * @param dosyaAdi İndirilecek PDF dosyasının adı
@@ -48,23 +94,9 @@ export class BarkodOlusturucu {
         const sayfaGenislik = doc.internal.pageSize.getWidth();
         const sayfaYukseklik = doc.internal.pageSize.getHeight();
 
-        // Örnek bir barkod oluşturup boyutlarını alalım
-        const ornekCanvas = document.createElement('canvas');
-        JsBarcode(ornekCanvas, this.barkodDegeri, {
-            format: this.barkodTipi,
-            width: this.genislik,
-            height: this.yukseklik,
-            displayValue: true,
-            margin: 0
-        });
-
-        // Piksel değerlerini mm'ye çevir
-        const barkodGenislikMm = this.pixelToMm(ornekCanvas.width);
-        const barkodYukseklikMm = this.pixelToMm(ornekCanvas.height);
-
         // Bir sayfaya sığacak barkod sayısını hesapla
-        const satirBasinaBarkod = Math.floor(sayfaGenislik / (barkodGenislikMm + this.marj * 2));
-        const sutunBasinaBarkod = Math.floor(sayfaYukseklik / (barkodYukseklikMm + this.marj * 2));
+        const satirBasinaBarkod = Math.floor(sayfaGenislik / (this.barkodGenislikMm + this.marj * 2));
+        const sutunBasinaBarkod = Math.floor(sayfaYukseklik / (this.barkodYukseklikMm + this.marj * 2));
         const sayfaBasinaBarkod = satirBasinaBarkod * sutunBasinaBarkod;
 
         let sayfaSayisi = Math.ceil(adet / sayfaBasinaBarkod);
@@ -79,8 +111,8 @@ export class BarkodOlusturucu {
                 for (let satir = 0; satir < satirBasinaBarkod; satir++) {
                     if (barkodSayaci >= adet) break;
 
-                    const x = satir * (barkodGenislikMm + this.marj * 2) + this.marj;
-                    const y = sutun * (barkodYukseklikMm + this.marj * 2) + this.marj;
+                    const x = satir * (this.barkodGenislikMm + this.marj * 2) + this.marj;
+                    const y = sutun * (this.barkodYukseklikMm + this.marj * 2) + this.marj;
 
                     this.barkodEkle(doc, x, y);
                     barkodSayaci++;
@@ -101,28 +133,14 @@ export class BarkodOlusturucu {
         const sayfaGenislik = doc.internal.pageSize.getWidth();
         const sayfaYukseklik = doc.internal.pageSize.getHeight();
 
-        // Örnek bir barkod oluşturup boyutlarını alalım
-        const ornekCanvas = document.createElement('canvas');
-        JsBarcode(ornekCanvas, this.barkodDegeri, {
-            format: this.barkodTipi,
-            width: this.genislik,
-            height: this.yukseklik,
-            displayValue: true,
-            margin: 0
-        });
-
-        // Piksel değerlerini mm'ye çevir
-        const barkodGenislikMm = this.pixelToMm(ornekCanvas.width);
-        const barkodYukseklikMm = this.pixelToMm(ornekCanvas.height);
-
         // Bir sayfaya sığacak barkod sayısını hesapla
-        const satirBasinaBarkod = Math.floor(sayfaGenislik / (barkodGenislikMm + this.marj * 2));
-        const sutunBasinaBarkod = Math.floor(sayfaYukseklik / (barkodYukseklikMm + this.marj * 2));
+        const satirBasinaBarkod = Math.floor(sayfaGenislik / (this.barkodGenislikMm + this.marj * 2));
+        const sutunBasinaBarkod = Math.floor(sayfaYukseklik / (this.barkodYukseklikMm + this.marj * 2));
 
         for (let sutun = 0; sutun < sutunBasinaBarkod; sutun++) {
             for (let satir = 0; satir < satirBasinaBarkod; satir++) {
-                const x = satir * (barkodGenislikMm + this.marj * 2) + this.marj;
-                const y = sutun * (barkodYukseklikMm + this.marj * 2) + this.marj;
+                const x = satir * (this.barkodGenislikMm + this.marj * 2) + this.marj;
+                const y = sutun * (this.barkodYukseklikMm + this.marj * 2) + this.marj;
 
                 this.barkodEkle(doc, x, y);
             }
@@ -132,29 +150,11 @@ export class BarkodOlusturucu {
         await this.dosyaKaydet(doc, dosyaAdi);
     }
 
-    /**
-     * PDF'e barkod ekler
-     */
     private barkodEkle(doc: jsPDF, x: number, y: number): void {
-        // Canvas oluştur
-        const canvas = document.createElement('canvas');
-
-        // Barkodu canvas'a çiz
-        JsBarcode(canvas, this.barkodDegeri, {
-            format: this.barkodTipi,
-            width: this.genislik,
-            height: this.yukseklik,
-            displayValue: true,
-            margin: 0
-        });
-
         // Canvas'ı PDF'e ekle - orijinal boyutları koruyarak (mm cinsinden)
-        const imgData = canvas.toDataURL('image/png');
-        const genislikMm = this.pixelToMm(canvas.width);
-        const yukseklikMm = this.pixelToMm(canvas.height);
-
+        const imgData = this.barkodCanvas.toDataURL('image/png');
         // Canvas'ı mm cinsinden boyutlarıyla PDF'e ekle
-        doc.addImage(imgData, 'PNG', x, y, genislikMm, yukseklikMm);
+        doc.addImage(imgData, 'PNG', x, y, this.barkodGenislikMm, this.barkodYukseklikMm);
     }
 
     /**

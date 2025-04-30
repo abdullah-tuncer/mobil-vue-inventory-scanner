@@ -68,7 +68,7 @@
         <v-card-actions>
           <v-row>
             <v-col cols="6">
-              <v-btn @click="router.back()" color="secondary" block>Vazgeç</v-btn>
+              <v-btn @click="router.push('/envanter?tab=urunler')" color="secondary" block>Vazgeç</v-btn>
             </v-col>
             <v-col cols="6">
               <v-btn @click="save" color="primary" block>Kaydet</v-btn>

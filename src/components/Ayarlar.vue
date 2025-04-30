@@ -83,6 +83,18 @@
             </v-list>
           </v-list-item>
         </v-list>
+        <v-divider/>
+        <v-list>
+          <v-list-subheader>
+            <h2>Ürün Ayarları</h2>
+          </v-list-subheader>
+          <v-list-item>
+            <!--olsunMu-->
+            <v-checkbox label="Barkod yazısını özelleştir" class="pb-0" hide-details/>
+            <!--yazi-->
+            <v-text-field label="Özelleştirilmiş yazı"/>
+          </v-list-item>
+        </v-list>
       </v-card>
     </v-col>
   </v-row>

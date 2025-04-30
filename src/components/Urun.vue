@@ -62,8 +62,10 @@
           </v-col>
           <v-col cols="12">
             <v-alert variant="outlined" type="info">
-              Bazı ürünlerde barkod bulunmayabilir. Bu durumda, uygulamanın tanıyabileceği özel bir barkod oluşturabilirsiniz.
-              Oluşturduğunuz barkodu yazdırabilir ve ürüne yapıştırabilirsiniz. Bu barkod, ürünü hızlıca taramanıza ve bulmanıza yardımcı olacaktır.
+              Bazı ürünlerde barkod bulunmayabilir. Bu durumda, uygulamanın tanıyabileceği özel bir barkod
+              oluşturabilirsiniz.
+              Oluşturduğunuz barkodu yazdırabilir ve ürüne yapıştırabilirsiniz. Bu barkod, ürünü hızlıca taramanıza ve
+              bulmanıza yardımcı olacaktır.
 
               <v-btn @click="createCustomBarcode" prepend-icon="mdi-barcode" rounded="1" variant="outlined" block>
                 Özel Barkod Oluştur
@@ -82,7 +84,7 @@
                 color="primary"
             >
               <v-list>
-                <v-list-item v-if="filteredBarkodlar.lenght>0" v-for="(barkod,index) in filteredBarkodlar">
+                <v-list-item v-if="filteredBarkodlar.length>0" v-for="(barkod,index) in filteredBarkodlar">
                   <v-list-item-title>
                     {{ barkod.data }}
                   </v-list-item-title>
@@ -114,25 +116,6 @@
             <br>
             {{ urun.aciklama }}
           </v-col>
-          <!--          <v-col cols="12">-->
-          <!--            <v-card variant="outlined" color="secondary" align="center">-->
-          <!--              <v-card-title class="pt-0">Fiyat</v-card-title>-->
-          <!--              <v-card-text>-->
-          <!--                <span v-if="urun.indirimli_fiyat" style="display: flex; justify-content: center; align-items: center">-->
-          <!--                  <h2 class="supsub pt-2">-->
-          <!--                    <sup>-->
-          <!--                      <del>{{ urun.fiyat + "₺" }}</del>-->
-          <!--                    </sup>-->
-          <!--                    <sub class="mt-2">-->
-          <!--                      <v-icon icon="mdi-arrow-down" size="x-small"/>%{{ indirimOrani(urun) }}-->
-          <!--                    </sub>-->
-          <!--                  </h2>-->
-          <!--                  <h1 class="ml-4">{{ urun.indirimli_fiyat }}₺</h1>-->
-          <!--                </span>-->
-          <!--                <h1 v-else>{{ urun.fiyat }}₺</h1>-->
-          <!--              </v-card-text>-->
-          <!--            </v-card>-->
-          <!--          </v-col>-->
           <v-col cols="12">
             <v-card variant="outlined" color="secondary" align="center">
               <v-card-title class="pt-0">Fiyat</v-card-title>
@@ -140,7 +123,7 @@
               <v-card-text>
                 <v-row v-if="urun.indirimli_fiyat">
                   <v-col cols="4">
-                    <v-row >
+                    <v-row>
                       <v-col align-self="center" cols="12" class="border-e border-b">
                         <h3>
                           <del>{{ urun.fiyat }}₺</del>
@@ -179,7 +162,63 @@
                     {{ barkod.type }}
                   </v-list-item-subtitle>
                   <template #append>
-                    <v-icon @click="">mdi-printer</v-icon>
+                    <v-dialog @update:model-value="val => val && onizleInit(barkod.data, barkod.type)">
+                      <template #activator="{props}">
+                        <v-icon v-bind="props">mdi-printer</v-icon>
+                      </template>
+                      <v-card>
+                        <v-row class="ma-auto">
+                          <v-col cols="12" align="center" style="background: white">
+                            <div class="pa-1" id="barkodContainer"></div>
+                          </v-col>
+                          <v-col cols="12" align="center" class="py-0">
+                            <p id="barkodOlculeri">?x? mm</p>
+                          </v-col>
+                          <v-col cols="12" class="py-0">
+                            <v-radio-group
+                                v-model="barkodAyar.boyut"
+                                @change="onizleInit(barkod.data, barkod.type)"
+                                class="py-0"
+                                inline
+                                hide-details
+                            >
+                              <v-radio label="Küçük" value="small"/>
+                              <v-radio label="Normal" value="normal"/>
+                            </v-radio-group>
+                          </v-col>
+                          <v-col cols="12" class="py-0">
+                            <v-checkbox
+                                v-model="barkodAyar.yaziOlsunMu"
+                                @change="onizleInit(barkod.data, barkod.type)"
+                                label="Yazı Görünsün"
+                                class="py-0"
+                                hide-details
+                            />
+                          </v-col>
+                          <v-col cols="12" class="py-0">
+                            <v-number-input v-model="barkodAyar.adet" label="Barkod Adeti" :min="1" hide-details/>
+                          </v-col>
+                          <v-col cols="12">
+                            <v-btn
+                                color="primary"
+                                block
+                                @click="cokluBarkodIndir()"
+                            >
+                              {{ barkodAyar.adet }} Adet Barkod İndir
+                            </v-btn>
+                          </v-col>
+                          <v-col cols="12">
+                            <v-btn
+                                color="success"
+                                block
+                                @click="sayfayaSigacakBarkodIndir()"
+                            >
+                              Sayfaya Sığacak Kadar Barkod İndir
+                            </v-btn>
+                          </v-col>
+                        </v-row>
+                      </v-card>
+                    </v-dialog>
                   </template>
                 </v-list-item>
                 <v-list-item v-else>
@@ -218,10 +257,11 @@
 
 <script setup lang="ts">
 
-import {computed, onMounted, ref} from "vue";
+import {computed, nextTick, onMounted, reactive, ref} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import inventoryService, {Tables} from "../services/inventoryService.ts";
 import {BarcodeScanner} from "@capacitor-mlkit/barcode-scanning";
+import {BarkodOlusturucu} from "../services/BarkodOlusturucu.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -235,6 +275,44 @@ const headers = ref([
   {title: "Adet", value: "adet", key: "adet"},
   {title: "Tutar", value: "tutar", key: "tutar", align: "end" as const}
 ]);
+
+const barkodAyar = reactive({
+  adet: 5,
+  boyut: "normal",
+  yaziOlsunMu: true
+});
+const barkodOlusturucu = ref<BarkodOlusturucu | null>(null);
+
+const onizleInit = async (data: string, type: string) => {
+  // ayarlardacustom barkod yazısı var mı kontrol et
+  let customTextControl = {
+    olsunMu: false,
+    yazi: ""
+  };
+  let yazi = barkodAyar.yaziOlsunMu ? (customTextControl.olsunMu ? customTextControl.yazi : "DEFAULT") : "NONE"
+  barkodOlusturucu.value = new BarkodOlusturucu(data, type, (barkodAyar.boyut as "small" | "normal"), yazi);
+  const barkodElement = barkodOlusturucu.value.barkodCanvas;
+
+  await nextTick();
+  let container = document.getElementById('barkodContainer');
+  if (container) {
+    container.innerHTML = '';
+    container.appendChild(barkodElement);
+  }
+  let barkodOlculeri = document.getElementById('barkodOlculeri');
+  if (barkodOlculeri) {
+    barkodOlculeri.innerHTML = Math.floor(barkodOlusturucu.value.barkodGenislikMm) + "x" + Math.floor(barkodOlusturucu.value.barkodYukseklikMm) + " mm";
+  }
+}
+
+const cokluBarkodIndir = () => {
+  if (barkodOlusturucu.value)
+    barkodOlusturucu.value.cokluBarkodPdfIndir(barkodAyar.adet);
+}
+const sayfayaSigacakBarkodIndir = () => {
+  if (barkodOlusturucu.value)
+    barkodOlusturucu.value.sayfayaSigacakBarkodPdfIndir();
+}
 
 onMounted(async () => {
   await load();
@@ -261,7 +339,6 @@ const indirimOraniHesapla = (fiyat: number, indirimli_fiyat: number): number => 
 }
 
 const filteredBarkodlar = computed(() => {
-  if (!urunDuzenle.value?.barkodlar) return [];
   return urunDuzenle.value.barkodlar.filter((barkod: any) => !barkod.isDeleted);
 });
 
@@ -353,7 +430,7 @@ const requestPermissions = async (): Promise<boolean> => {
 
 const createCustomBarcode = () => {
   const timestamp = new Date().getTime();
-  const barcodeData = `C-${urunDuzenle.value.id}-${timestamp}`;
+  const barcodeData = `${urunDuzenle.value.id}-${timestamp}`;
   urunDuzenle.value.barkodlar.push({
     data: barcodeData,
     type: "CODE_128",
@@ -389,13 +466,4 @@ const items = ref([
 </script>
 
 <style scoped>
-.supsub {
-  display: inline-block !important;
-}
-
-.supsub sup,
-.supsub sub {
-  position: relative !important;
-  display: block !important;
-}
 </style>
