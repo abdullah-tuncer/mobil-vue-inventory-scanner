@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app :theme="theme">
     <v-main>
       <v-container>
         <RouterView/>
@@ -28,40 +28,24 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref, watch} from 'vue';
+import {computed, ref, watch} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
-import SQLiteService from './services/sqliteService';
-import inventoryService from "./services/inventoryService.ts";
+import {useStore} from "vuex";
 
-// Router ve route tanımlama
 const router = useRouter();
 const route = useRoute();
+const store = useStore();
 
-// Aktif sekmeyi izlemek için ref
-const activeTab = ref(0);
+const theme = computed(()=> store.getters['settings/getAyarByKey']("tema"));
 
-// Rota değiştiğinde aktif sekmeyi güncelle
+
+const activeTab = ref(2);
+
 watch(() => route.path, (newPath) => {
   if (newPath === '/ayarlar') activeTab.value = 0;
   else if (newPath === '/envanter') activeTab.value = 1;
   else if (newPath === '/') activeTab.value = 2;
   else if (newPath === '/satis') activeTab.value = 3;
-});
-
-onMounted(async () => {
-  try {
-    // Web platformunda SQLite'ı başlat
-    if (SQLiteService.getPlatform() === 'web') {
-      console.log("init Web Store");
-      await SQLiteService.initWebStore();
-    }
-
-    // Örnek veritabanını başlat
-    await inventoryService.initializeDatabase();
-
-  } catch (error) {
-    console.error('Error initializing database:', error);
-  }
 });
 </script>
 

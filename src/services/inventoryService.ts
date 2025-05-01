@@ -1,7 +1,7 @@
 import {SQLiteDBConnection} from "@capacitor-community/sqlite";
 import SQLiteService from "./sqliteService.ts";
 import type {ISQLiteService} from "./sqliteService.ts";
-import type {IBarkod, IEnvanter, IEnvanterHareketi, ISatis, ISatisUrunu, IUrun} from "../types/inventory.ts";
+import type {IAyar, IBarkod, IEnvanter, IEnvanterHareketi, ISatis, ISatisUrunu, IUrun} from "../types/inventory.ts";
 
 interface IInventoryService {
     initializeDatabase(): Promise<void>;
@@ -18,7 +18,8 @@ export enum Tables {
     ENVANTER_HAREKETLERI = 'envanter_hareketleri',
     ENVANTER = 'envanter',
     SATISLAR = 'satislar',
-    SATIS_URUNLERI = 'satis_urunleri'
+    SATIS_URUNLERI = 'satis_urunleri',
+    AYARLAR = 'ayarlar'
 }
 
 type TableTypeMap = {
@@ -28,12 +29,13 @@ type TableTypeMap = {
     [Tables.ENVANTER]: IEnvanter;
     [Tables.SATISLAR]: ISatis;
     [Tables.SATIS_URUNLERI]: ISatisUrunu;
+    [Tables.AYARLAR]: IAyar;
 }
 
 class InventoryService implements IInventoryService {
     private db!: SQLiteDBConnection;
     private database: string = 'inventory_db';
-    private loadToVersion: number = 1;
+    private loadToVersion: number = 2;
     private initialized: boolean = false;
 
     constructor(private sqliteService: ISQLiteService) {
@@ -55,6 +57,23 @@ class InventoryService implements IInventoryService {
                             'CREATE TABLE IF NOT EXISTS envanter (id INTEGER PRIMARY KEY AUTOINCREMENT, urun_id INTEGER NOT NULL UNIQUE, adet INTEGER NOT NULL DEFAULT 0, updated_at TEXT, FOREIGN KEY (urun_id) REFERENCES urunler(id));',
                             'CREATE TABLE IF NOT EXISTS satislar (id INTEGER PRIMARY KEY AUTOINCREMENT, toplam_tutar REAL NOT NULL, ekstra_indirim_tutari REAL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);',
                             'CREATE TABLE IF NOT EXISTS satis_urunleri (id INTEGER PRIMARY KEY AUTOINCREMENT, satis_id INTEGER NOT NULL, urun_id INTEGER NOT NULL, adet INTEGER NOT NULL, birim_fiyat REAL NOT NULL, indirimli_birim_fiyat REAL DEFAULT 0, tutar REAL NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (satis_id) REFERENCES satislar(id), FOREIGN KEY (urun_id) REFERENCES urunler(id));'
+                        ]
+                    },
+                    {
+                        toVersion: 2,
+                        statements: [
+                            'CREATE TABLE IF NOT EXISTS ayarlar (id INTEGER PRIMARY KEY AUTOINCREMENT, anahtar TEXT NOT NULL UNIQUE, deger TEXT, grup TEXT, aciklama TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT);',
+                            // Varsayılan ayarları ekleyin
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('tema', 'light', 'sistem', 'Uygulama teması (acik/karanlik)');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('tablo_gorunumu', 'varsayilan', 'sistem', 'Tablo görünüm modu (varsayilan/mobil)');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('sirket_adi', '', 'anasayfa', 'Şirket adı');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('sirket_aciklama', '', 'anasayfa', 'Şirket açıklaması');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('sirket_liste', '[]', 'anasayfa', 'Kopyalanabilir veya Paylaşılabilir Liste');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('barkod_yazi', '', 'urun', 'Barkod özelleştirilmiş yazı');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('barkod_yazi_aktif', 'false', 'urun', 'Barkod yazısı özelleştirilsin mi');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_1', '10', 'urun', 'Birinci indirim oranı');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_2', '20', 'urun', 'İkinci indirim oranı');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_3', '30', 'urun', 'Üçüncü indirim oranı');"
                         ]
                     }
                 ],
@@ -145,6 +164,51 @@ class InventoryService implements IInventoryService {
         } catch (error: any) {
             const msg = error.message ? error.message : error;
             throw new Error(`inventoryService.deleteItem: ${msg}`);
+        }
+    }
+
+    // Ayarları getirmek için özel metod
+    async getAyarlar(grup?: string): Promise<Array<IAyar>> {
+        if (!this.initialized) await this.initializeDatabase();
+        try {
+            let query = 'SELECT * FROM ayarlar';
+            let params: any[] = [];
+
+            if (grup) {
+                query += ' WHERE grup = ?';
+                params.push(grup);
+            }
+
+            const result = await this.db.query(query, params);
+            return result.values || [];
+        } catch (error: any) {
+            const msg = error.message ? error.message : error;
+            throw new Error(`inventoryService.getAyarlar: ${msg}`);
+        }
+    }
+
+    // Tek bir ayarı getirmek için özel metod
+    async getAyar(anahtar: string): Promise<string | null> {
+        if (!this.initialized) await this.initializeDatabase();
+        try {
+            const query = 'SELECT deger FROM ayarlar WHERE anahtar = ?';
+            const result = await this.db.query(query, [anahtar]);
+            return result.values?.[0]?.deger || null;
+        } catch (error: any) {
+            const msg = error.message ? error.message : error;
+            throw new Error(`inventoryService.getAyar: ${msg}`);
+        }
+    }
+
+    // Ayarı güncellemek için özel metod
+    async setAyar(anahtar: string, deger: string): Promise<void> {
+        if (!this.initialized) await this.initializeDatabase();
+        try {
+            const statement = 'UPDATE ayarlar SET deger = ?, updated_at = CURRENT_TIMESTAMP WHERE anahtar = ?';
+            await this.db.run(statement, [deger, anahtar]);
+        } catch (error: any) {
+            const msg = error.message ? error.message : error;
+            throw new Error(`inventoryService.setAyar: ${msg}`);
         }
     }
 }

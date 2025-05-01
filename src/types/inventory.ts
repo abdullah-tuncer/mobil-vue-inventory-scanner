@@ -1,3 +1,13 @@
+export interface IAyar {
+    id?: number;
+    anahtar: string;
+    deger: string;
+    grup?: string;
+    aciklama?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface IUrun {
     id: number;
     ad: string;

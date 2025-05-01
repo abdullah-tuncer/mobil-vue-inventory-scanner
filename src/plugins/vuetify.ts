@@ -6,16 +6,23 @@ import * as directives from 'vuetify/directives'
 import {tr} from "vuetify/locale";
 import {md3} from "vuetify/blueprints";
 
-export default createVuetify({
-    blueprint: md3,
-    locale: {
-        locale: 'tr',
-        fallback: 'tr',
-        messages: {tr}
-    },
-    theme: {
-        defaultTheme: 'dark',
-    },
-    components,
-    directives
-})
+export default function initVuetify(settings: any) {
+    return createVuetify({
+        blueprint: md3,
+        locale: {
+            locale: 'tr',
+            fallback: 'tr',
+            messages: {tr}
+        },
+        theme: {
+            defaultTheme: settings.tema,
+        },
+        defaults:{
+          VDataTable: {
+              mobile: settings.mobil_tablo
+          }
+        },
+        components,
+        directives
+    })
+}

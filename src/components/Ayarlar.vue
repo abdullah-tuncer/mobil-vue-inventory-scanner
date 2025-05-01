@@ -9,17 +9,23 @@
           <v-list-subheader>
             <h2>Sistem Ayarları</h2>
           </v-list-subheader>
-          <v-list-item @click="()=>{}">
+          <v-list-item>
             <v-list-item-title>Tema</v-list-item-title>
             <template #append>
-              <!--        <v-icon>mdi-weather-sunny</v-icon>-->
-              <v-icon>mdi-weather-night</v-icon>
+              <v-switch v-model="tema" hide-details>
+                <template #prepend>
+                  <v-icon>mdi-weather-sunny</v-icon>
+                </template>
+                <template #append>
+                  <v-icon>mdi-weather-night</v-icon>
+                </template>
+              </v-switch>
             </template>
           </v-list-item>
-          <v-list-item @click="()=>{}">
+          <v-list-item>
             <v-list-item-title>Tablo Görünümü</v-list-item-title>
             <template #append>
-              <v-switch hide-details>
+              <v-switch v-model="tabloGorunumu" hide-details>
                 <template #prepend>
                   Varsayılan
                 </template>
@@ -36,11 +42,11 @@
             <h2>Anasayfa Ayarları</h2>
           </v-list-subheader>
           <v-list-item>
-            <v-text-field label="Şirket Adı" hide-details class="mt-2">
+            <v-text-field v-model="sirketAdi" label="Şirket Adı" hide-details class="mt-2">
             </v-text-field>
           </v-list-item>
           <v-list-item>
-            <v-textarea label="Şirket Açıklama" hide-details class="mt-2">
+            <v-textarea v-model="sirketAciklama" label="Şirket Açıklama" hide-details class="mt-2">
             </v-textarea>
           </v-list-item>
           <v-list-item>
@@ -49,35 +55,26 @@
                 <h3>Kopyalanabilir veya Paylaşılabilir Liste</h3>
               </v-list-subheader>
               <v-list-item>
-                <v-text-field label="Ekle" placeholder="Örneğin: IBAN, Tel, Adres..." hide-details class="my-2">
+                <v-text-field
+                    v-model="yeniListeItem"
+                    label="Ekle"
+                    class="my-2"
+                    placeholder="Örneğin: IBAN, Tel, Adres..."
+                    hide-details
+                    :disabled="onFlyList"
+                >
                   <template #append-inner>
-                    <v-btn icon="mdi-plus" @click="()=>{}" variant="text"/>
+                    <v-btn icon="mdi-plus" @click="addListItem" variant="text" :disabled="onFlyList"/>
                   </template>
                 </v-text-field>
               </v-list-item>
               <v-divider/>
-              <v-list-item>
+              <v-list-item v-for="(item, index) in sirketListe" :key="index">
                 <v-list-item-subtitle>
-                  TR76 0009 9012 3456 7800 1000 01
+                  {{ item }}
                 </v-list-item-subtitle>
                 <template #append>
-                  <v-btn icon="mdi-close" @click="()=>{}" variant="text"/>
-                </template>
-              </v-list-item>
-              <v-list-item>
-                <v-list-item-subtitle>
-                  0555 400 2010
-                </v-list-item-subtitle>
-                <template #append>
-                  <v-btn icon="mdi-close" @click="()=>{}" variant="text"/>
-                </template>
-              </v-list-item>
-              <v-list-item>
-                <v-list-item-subtitle>
-                  Gazi Mehmet mah. 5500 sk. no:61 k:1 d:1 Bornova/İzmir
-                </v-list-item-subtitle>
-                <template #append>
-                  <v-btn icon="mdi-close" @click="()=>{}" variant="text"/>
+                  <v-btn icon="mdi-close" @click="removeListItem(index)" variant="text" :disabled="onFlyList"/>
                 </template>
               </v-list-item>
             </v-list>
@@ -89,10 +86,22 @@
             <h2>Ürün Ayarları</h2>
           </v-list-subheader>
           <v-list-item>
-            <!--olsunMu-->
-            <v-checkbox label="Barkod yazısını özelleştir" class="pb-0" hide-details/>
-            <!--yazi-->
-            <v-text-field label="Özelleştirilmiş yazı"/>
+            <v-checkbox v-model="barkodYaziAktif" label="Barkod yazısını özelleştir" class="pb-0" hide-details/>
+            <v-text-field v-model="barkodYazi" label="Özelleştirilmiş yazı" :disabled="!barkodYaziAktif"/>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-title>İndirim Uygulama Butonları</v-list-item-title>
+            <v-row class="my-auto">
+              <v-col cols="12">
+                <v-number-input v-model="indirimOran1" label="1. İndirim Oranı" prefix="%" hide-details/>
+              </v-col>
+              <v-col cols="12">
+                <v-number-input v-model="indirimOran2" label="2. İndirim Oranı" prefix="%" hide-details/>
+              </v-col>
+              <v-col cols="12">
+                <v-number-input v-model="indirimOran3" label="3. İndirim Oranı" prefix="%" hide-details/>
+              </v-col>
+            </v-row>
           </v-list-item>
         </v-list>
       </v-card>
@@ -101,7 +110,117 @@
 </template>
 
 <script setup lang="ts">
+import {computed, ref} from 'vue';
+import {useStore} from 'vuex';
 
+const store = useStore();
+
+const tema = computed({
+  get: () => store.getters['settings/getAyarByKey']('tema') === 'dark',
+  set: (value) => store.dispatch('settings/updateSetting', {
+    key: 'tema',
+    value: value ? 'dark' : 'light'
+  })
+});
+
+const tabloGorunumu = computed({
+  get: () => store.getters['settings/getAyarByKey']('tablo_gorunumu') === 'mobil',
+  set: (value) => store.dispatch('settings/updateSetting', {
+    key: 'tablo_gorunumu',
+    value: value ? 'mobil' : 'varsayilan'
+  })
+});
+
+const sirketAdi = computed({
+  get: () => store.getters['settings/getAyarByKey']('sirket_adi') || '',
+  set: (value) => store.dispatch('settings/updateSetting', {
+    key: 'sirket_adi',
+    value
+  })
+});
+
+const sirketAciklama = computed({
+  get: () => store.getters['settings/getAyarByKey']('sirket_aciklama') || '',
+  set: (value) => store.dispatch('settings/updateSetting', {
+    key: 'sirket_aciklama',
+    value
+  })
+});
+
+const barkodYaziAktif = computed({
+  get: () => store.getters['settings/getAyarByKey']('barkod_yazi_aktif') === 'true',
+  set: (value) => store.dispatch('settings/updateSetting', {
+    key: 'barkod_yazi_aktif',
+    value: value ? 'true' : 'false'
+  })
+});
+
+const barkodYazi = computed({
+  get: () => store.getters['settings/getAyarByKey']('barkod_yazi') || '',
+  set: (value) => store.dispatch('settings/updateSetting', {
+    key: 'barkod_yazi',
+    value
+  })
+});
+
+const indirimOran1 = computed({
+  get: () => Number(store.getters['settings/getAyarByKey']('indirim_oran_1')),
+  set: (value) => store.dispatch('settings/updateSetting', {
+    key: 'indirim_oran_1',
+    value: value.toString()
+  })
+});
+
+const indirimOran2 = computed({
+  get: () => Number(store.getters['settings/getAyarByKey']('indirim_oran_2')),
+  set: (value) => store.dispatch('settings/updateSetting', {
+    key: 'indirim_oran_2',
+    value: value.toString()
+  })
+});
+
+const indirimOran3 = computed({
+  get: () => Number(store.getters['settings/getAyarByKey']('indirim_oran_3')),
+  set: (value) => store.dispatch('settings/updateSetting', {
+    key: 'indirim_oran_3',
+    value: value.toString()
+  })
+});
+
+const sirketListe = computed(() => JSON.parse(store.getters['settings/getAyarByKey']('sirket_liste')));
+const yeniListeItem = ref('');
+const onFlyList = ref(false);
+
+const addListItem = async () => {
+  try {
+    if (yeniListeItem.value.trim()) {
+      onFlyList.value = true;
+      let list = [...sirketListe.value];
+      list.push(yeniListeItem.value);
+      await store.dispatch('settings/updateSetting', {
+        key: 'sirket_liste',
+        value: JSON.stringify(list)
+      });
+      yeniListeItem.value = '';
+    }
+  } finally {
+    onFlyList.value = false;
+  }
+};
+
+const removeListItem = async (index: number) => {
+  try {
+    onFlyList.value = true;
+    let list = [...sirketListe.value];
+    list.splice(index, 1);
+    await store.dispatch('settings/updateSetting', {
+      key: 'sirket_liste',
+      value: JSON.stringify(list)
+    });
+  } finally {
+    onFlyList.value = false;
+  }
+};
 </script>
 
 <style scoped>
