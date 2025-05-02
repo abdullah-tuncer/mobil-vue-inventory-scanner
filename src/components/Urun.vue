@@ -47,10 +47,8 @@
             <v-label>İndirim Uygula</v-label>
             <br>
             <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
-              <v-btn>Yok</v-btn>
-              <v-btn>%10</v-btn>
-              <v-btn>%25</v-btn>
-              <v-btn>%50</v-btn>
+              <v-btn @click="indirimUygula(0)">Yok</v-btn>
+              <v-btn v-for="oran in indirimOranlari" @click="indirimUygula(oran)">%{{oran}}</v-btn>
             </v-btn-toggle>
             <v-text-field
                 v-model="urunDuzenle.indirimli_fiyat"
@@ -262,9 +260,11 @@ import {useRoute, useRouter} from "vue-router";
 import inventoryService, {Tables} from "../services/inventoryService.ts";
 import {BarcodeScanner} from "@capacitor-mlkit/barcode-scanning";
 import {BarkodOlusturucu} from "../services/BarkodOlusturucu.ts";
+import {useStore} from "vuex";
 
 const router = useRouter();
 const route = useRoute();
+const store = useStore();
 const duzenleAktif = ref(false);
 const tab = ref("tablo");
 
@@ -309,9 +309,23 @@ const cokluBarkodIndir = () => {
   if (barkodOlusturucu.value)
     barkodOlusturucu.value.cokluBarkodPdfIndir(barkodAyar.adet);
 }
+
 const sayfayaSigacakBarkodIndir = () => {
   if (barkodOlusturucu.value)
     barkodOlusturucu.value.sayfayaSigacakBarkodPdfIndir();
+}
+
+const indirimOranlari = computed(()=>[
+  Number(store.getters["settings/getAyarByKey"]("indirim_oran_1")),
+  Number(store.getters["settings/getAyarByKey"]("indirim_oran_2")),
+  Number(store.getters["settings/getAyarByKey"]("indirim_oran_3")),
+])
+
+const indirimUygula = (oran: number) => {
+  if (oran==0)
+    urunDuzenle.value.indirimli_fiyat = undefined;
+  else
+    urunDuzenle.value.indirimli_fiyat = urunDuzenle.value.fiyat - (urunDuzenle.value.fiyat * (oran / 100));
 }
 
 onMounted(async () => {
