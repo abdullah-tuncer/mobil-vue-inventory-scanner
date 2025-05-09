@@ -29,7 +29,7 @@
             <br>
             <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
               <v-btn @click="indirimUygula(0)">Yok</v-btn>
-              <v-btn v-for="oran in indirimOranlari" @click="indirimUygula(oran)">%{{oran}}</v-btn>
+              <v-btn v-for="oran in indirimOranlari" @click="indirimUygula(oran)">%{{ oran }}</v-btn>
             </v-btn-toggle>
             <v-text-field
                 v-model="item.indirimli_fiyat"
@@ -50,10 +50,10 @@
               <v-list>
                 <v-list-item v-for="(barkod,index) in barkodlar">
                   <v-list-item-title>
-                    {{barkod.data}}
+                    {{ barkod.data }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
-                    {{barkod.type}}
+                    {{ barkod.type }}
                   </v-list-item-subtitle>
                   <template #append>
                     <v-icon @click="removeBarcode(index)">mdi-close</v-icon>
@@ -76,33 +76,31 @@
       </v-card>
     </v-col>
   </v-row>
-  <audio ref="beepSound" src="/beep.mp3" preload="auto"></audio>
 </template>
 
 <script setup lang="ts">
 import {computed, ref} from "vue";
 import {Urun} from "../classes/Urun.ts";
 import InventoryService, {Tables} from "../services/inventoryService.ts";
-import {BarcodeScanner} from "@capacitor-mlkit/barcode-scanning";
-//import type {IBarkod} from "../types/inventory.ts";
 import {useRouter} from "vue-router";
 import {useStore} from "vuex";
+import barkodTaramaService from "../services/BarkodTaramaService.ts";
+import {toast} from "vue3-toastify";
 
 const form = ref();
 const item = ref(new Urun());
 const barkodlar = ref<Array<any>>([]);
-const beepSound = ref<HTMLAudioElement | null>(null);
 const router = useRouter();
 const store = useStore();
 
-const indirimOranlari = computed(()=>[
-    Number(store.getters["settings/getAyarByKey"]("indirim_oran_1")),
-    Number(store.getters["settings/getAyarByKey"]("indirim_oran_2")),
-    Number(store.getters["settings/getAyarByKey"]("indirim_oran_3")),
+const indirimOranlari = computed(() => [
+  Number(store.getters["settings/getAyarByKey"]("indirim_oran_1")),
+  Number(store.getters["settings/getAyarByKey"]("indirim_oran_2")),
+  Number(store.getters["settings/getAyarByKey"]("indirim_oran_3")),
 ])
 
 const indirimUygula = (oran: number) => {
-  if (oran==0)
+  if (oran == 0)
     item.value.indirimli_fiyat = undefined;
   else
     item.value.indirimli_fiyat = item.value.fiyat - (item.value.fiyat * (oran / 100));
@@ -113,45 +111,26 @@ const save = async () => {
   if (valid) {
     try {
       const id = await InventoryService.addItem(Tables.URUNLER, item.value);
-      for (let barkod of barkodlar.value){
+      for (let barkod of barkodlar.value) {
         barkod.urun_id = id;
         await InventoryService.addItem(Tables.BARKODLAR, barkod);
       }
       await router.push("/envanter?tab=urunler");
     } catch (e) {
-      console.error("Error - UrunEkle - save():",e);
+      console.error("Error - UrunEkle.vue - save():", e);
     }
   }
 }
 
 const addBarcode = async () => {
-  const granted = await requestPermissions();
-  if (!granted) {
-    // snackbar.value = true;
-    console.log('granted',granted)
-    return;
-  }
-  const { barcodes } = await BarcodeScanner.scan();
-  if (barcodes.length > 0) {
-    playBeepSound(); // Barkod tarandığında bip sesi çal
-    barkodlar.value.push({type: barcodes[0].format, data: barcodes[0].rawValue});
+  try {
+    const barkod = await barkodTaramaService.scanBarcode();
+    if (barkod)
+      barkodlar.value.push(barkod);
+  } catch (e: any) {
+    toast.error(e.message);
   }
 }
-
-// Bip sesi çalma fonksiyonu
-const playBeepSound = () => {
-  if (beepSound.value) {
-    beepSound.value.currentTime = 0;
-    beepSound.value.play().catch(err => {
-      console.error("Ses çalınamadı:", err);
-    });
-  }
-};
-
-const requestPermissions = async (): Promise<boolean> => {
-  const { camera } = await BarcodeScanner.requestPermissions();
-  return camera === 'granted' || camera === 'limited';
-};
 
 const removeBarcode = (index: number) => {
   barkodlar.value.splice(index, 1);

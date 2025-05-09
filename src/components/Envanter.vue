@@ -16,7 +16,13 @@
                 :items="envanterItems"
             >
               <template #top>
-                <v-btn block class="my-2" rounded="xs" prepend-icon="mdi-plus-minus-variant">
+                <v-btn
+                    @click="router.push('/envanter-hareketi')"
+                    class="my-2"
+                    rounded="xs"
+                    prepend-icon="mdi-plus-minus-variant"
+                    block
+                >
                   Ekle/Çıkar
                 </v-btn>
               </template>
@@ -54,7 +60,7 @@
 
 import {onMounted, ref} from "vue";
 import inventoryService, {Tables} from "../services/inventoryService.ts";
-import type {IUrun} from "../types/inventory.ts";
+import type {IEnvanter, IUrun} from "../types/inventory.ts";
 import {useRoute, useRouter} from "vue-router";
 
 const router = useRouter();
@@ -62,18 +68,11 @@ const route = useRoute();
 
 const tab = ref<"envanter" | "urunler">('envanter');
 const envanterHeaders = ref([
-  {title: "Ad", value: "ad", key: "ad"},
+  {title: "Ad", value: "urun.ad", key: "ad"},
   {title: "Adet", value: "adet", key: "adet", align: "end" as const}
 ]);
 
-const envanterItems = ref([
-  {id: 12, ad: "Ülker Gofret", adet: 120},
-  {id: 135, ad: "Barış Kedi Kumu", adet: 9},
-  {id: 2, ad: "Falım Sakız 5'li", adet: 200},
-  {id: 59, ad: "Keskin Sirke 2lt", adet: 50},
-  {id: 42, ad: "Küp", adet: 12},
-  {id: 23, ad: "Filtre Kahve Kağıdı", adet: 45},
-])
+const envanterItems = ref<Array<IEnvanter>>([]);
 
 const urunlerHeaders = ref([
   {title: "#", value: "id", key: "id", width: 64},
@@ -91,22 +90,15 @@ onMounted(() => {
 
 const load = async () => {
   try {
+    envanterItems.value = await inventoryService.getItems(Tables.ENVANTER);
     urunlerItems.value = await inventoryService.getItems(Tables.URUNLER);
-  } catch {
-    urunlerItems.value = [{
-      id: 1233,
-      ad: "Deneme",
-      aciklama: "deneme açıklaam",
-      fiyat: 20,
-      indirimli_fiyat: 10,
-      created_at: "2024-02-26 13:01:35",
-      updated_at: undefined
-    }];
+  } catch (e) {
+    console.error("Error - Envanter.vue - load():", e);
   }
 }
 
 //@ts-ignore
-const urunDetay = (event: Event, row:any) => {
-  router.push('/urun/'+row.item.id);
+const urunDetay = (event: Event, row: any) => {
+  router.push('/urun/' + row.item.id);
 }
 </script>

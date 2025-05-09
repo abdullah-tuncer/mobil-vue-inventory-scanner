@@ -1,7 +1,16 @@
 import {SQLiteDBConnection} from "@capacitor-community/sqlite";
 import SQLiteService from "./sqliteService.ts";
 import type {ISQLiteService} from "./sqliteService.ts";
-import type {IAyar, IBarkod, IEnvanter, IEnvanterHareketi, ISatis, ISatisUrunu, IUrun} from "../types/inventory.ts";
+import type {
+    IAyar,
+    IBarkod,
+    IEnvanter,
+    IEnvanterHareketi,
+    IEnvanterHareketiUrun,
+    ISatis,
+    ISatisUrunu,
+    IUrun
+} from "../types/inventory.ts";
 
 interface IInventoryService {
     initializeDatabase(): Promise<void>;
@@ -16,6 +25,7 @@ export enum Tables {
     URUNLER = 'urunler',
     BARKODLAR = 'barkodlar',
     ENVANTER_HAREKETLERI = 'envanter_hareketleri',
+    ENVANTER_HAREKETI_URUN = 'envanter_hareketi_urun',
     ENVANTER = 'envanter',
     SATISLAR = 'satislar',
     SATIS_URUNLERI = 'satis_urunleri',
@@ -26,6 +36,7 @@ type TableTypeMap = {
     [Tables.URUNLER]: IUrun;
     [Tables.BARKODLAR]: IBarkod;
     [Tables.ENVANTER_HAREKETLERI]: IEnvanterHareketi;
+    [Tables.ENVANTER_HAREKETI_URUN]: IEnvanterHareketiUrun;
     [Tables.ENVANTER]: IEnvanter;
     [Tables.SATISLAR]: ISatis;
     [Tables.SATIS_URUNLERI]: ISatisUrunu;
@@ -53,17 +64,31 @@ class InventoryService implements IInventoryService {
                         statements: [
                             'CREATE TABLE IF NOT EXISTS urunler (id INTEGER PRIMARY KEY AUTOINCREMENT, ad TEXT NOT NULL, aciklama TEXT, fiyat REAL NOT NULL, indirimli_fiyat REAL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT);',
                             'CREATE TABLE IF NOT EXISTS barkodlar (id INTEGER PRIMARY KEY AUTOINCREMENT, urun_id INTEGER NOT NULL, data TEXT NOT NULL, type TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (urun_id) REFERENCES urunler(id));',
-                            'CREATE TABLE IF NOT EXISTS envanter_hareketleri (id INTEGER PRIMARY KEY AUTOINCREMENT, urun_id INTEGER NOT NULL, adet INTEGER NOT NULL, islem_tipi TEXT NOT NULL, aciklama TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (urun_id) REFERENCES urunler(id));',
+                            'CREATE TABLE IF NOT EXISTS envanter_hareketleri (id INTEGER PRIMARY KEY AUTOINCREMENT, islem_tipi TEXT NOT NULL, aciklama TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);',
                             'CREATE TABLE IF NOT EXISTS envanter (id INTEGER PRIMARY KEY AUTOINCREMENT, urun_id INTEGER NOT NULL UNIQUE, adet INTEGER NOT NULL DEFAULT 0, updated_at TEXT, FOREIGN KEY (urun_id) REFERENCES urunler(id));',
                             'CREATE TABLE IF NOT EXISTS satislar (id INTEGER PRIMARY KEY AUTOINCREMENT, toplam_tutar REAL NOT NULL, ekstra_indirim_tutari REAL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);',
-                            'CREATE TABLE IF NOT EXISTS satis_urunleri (id INTEGER PRIMARY KEY AUTOINCREMENT, satis_id INTEGER NOT NULL, urun_id INTEGER NOT NULL, adet INTEGER NOT NULL, birim_fiyat REAL NOT NULL, indirimli_birim_fiyat REAL DEFAULT 0, tutar REAL NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (satis_id) REFERENCES satislar(id), FOREIGN KEY (urun_id) REFERENCES urunler(id));'
+                            'CREATE TABLE IF NOT EXISTS envanter_hareketi_urun (id INTEGER PRIMARY KEY AUTOINCREMENT, envanter_hareketi_id INTEGER NOT NULL, urun_id INTEGER NOT NULL, adet INTEGER NOT NULL, FOREIGN KEY (envanter_hareketi_id) REFERENCES envanter_hareketleri(id), FOREIGN KEY (urun_id) REFERENCES urunler(id));',
+                            'CREATE TABLE IF NOT EXISTS satis_urunleri (id INTEGER PRIMARY KEY AUTOINCREMENT, satis_id INTEGER NOT NULL, urun_id INTEGER NOT NULL, adet INTEGER NOT NULL, birim_fiyat REAL NOT NULL, indirimli_birim_fiyat REAL DEFAULT 0, tutar REAL NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (satis_id) REFERENCES satislar(id), FOREIGN KEY (urun_id) REFERENCES urunler(id));',
+                            // Envanter hareketi eklendiğinde stok güncellemesi için trigger
+                            `CREATE TRIGGER IF NOT EXISTS update_stock_after_movement
+                             AFTER INSERT ON envanter_hareketi_urun
+                             BEGIN
+                                 -- Eğer ürün envanter tablosunda yoksa ekle
+                                 INSERT OR IGNORE INTO envanter (urun_id, adet, updated_at)
+                                 VALUES (NEW.urun_id, 0, CURRENT_TIMESTAMP);
+                                 
+                                 -- Envanter tablosundaki stok miktarını güncelle
+                                 UPDATE envanter
+                                 SET adet = adet + NEW.adet,
+                                     updated_at = CURRENT_TIMESTAMP
+                                 WHERE urun_id = NEW.urun_id;
+                             END;`
                         ]
                     },
                     {
                         toVersion: 2,
                         statements: [
                             'CREATE TABLE IF NOT EXISTS ayarlar (id INTEGER PRIMARY KEY AUTOINCREMENT, anahtar TEXT NOT NULL UNIQUE, deger TEXT, grup TEXT, aciklama TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT);',
-                            // Varsayılan ayarları ekleyin
                             "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('tema', 'light', 'sistem', 'Uygulama teması (acik/karanlik)');",
                             "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('tablo_gorunumu', 'varsayilan', 'sistem', 'Tablo görünüm modu (varsayilan/mobil)');",
                             "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('sirket_adi', '', 'anasayfa', 'Şirket adı');",
@@ -75,7 +100,7 @@ class InventoryService implements IInventoryService {
                             "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_2', '20', 'urun', 'İkinci indirim oranı');",
                             "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_3', '30', 'urun', 'Üçüncü indirim oranı');"
                         ]
-                    }
+                    },
                 ],
             });
             // Veritabanını açma
@@ -97,10 +122,7 @@ class InventoryService implements IInventoryService {
             const values = filteredEntries.map(([_, value]) => value);
             const placeholders = keys.map(() => '?').join(', ');
             const statement = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
-            console.log("log61: SQLite statement",statement)
-            console.log("log61: SQLite values",values);
             const result = await this.db.run(statement, values);
-            console.log('log61: SQLite ', result)
             return result.changes?.lastId || 0;
         } catch (error: any) {
             const msg = error.message ? error.message : error;
@@ -112,8 +134,39 @@ class InventoryService implements IInventoryService {
         if (!this.initialized) await this.initializeDatabase();
         try {
             const fieldsStr = fields ? fields.join(', ') : '*';
-            const query = `SELECT ${fieldsStr} FROM ${table}`;
+            let query = `SELECT ${fieldsStr} FROM ${table}`;
+            // urun_idye göre urun'ü ekle
+            if (table == Tables.ENVANTER) {
+                query = `
+                    SELECT e.*,
+                           json_object(
+                                   'id', u.id,
+                                   'ad', u.ad,
+                                   'fiyat', u.fiyat,
+                                   'indirimli_fiyat', u.indirimli_fiyat,
+                                   'created_at', u.created_at,
+                                   'updated_at', u.updated_at
+                           ) as urun
+                    FROM ${table} e
+                    LEFT JOIN ${Tables.URUNLER} u ON e.urun_id = u.id
+                `;
+            }
+
             const result = await this.db.query(query);
+
+            // urun parse işlemi
+            if (table == Tables.ENVANTER && result.values) {
+                return result.values.map(item => {
+                    if (typeof item.urun === 'string') {
+                        try {
+                            item.urun = JSON.parse(item.urun);
+                        } catch (e) {
+                            console.error('JSON parse error:', e);
+                        }
+                    }
+                    return item;
+                });
+            }
             return result.values || [];
         } catch (error: any) {
             const msg = error.message ? error.message : error;
@@ -209,6 +262,34 @@ class InventoryService implements IInventoryService {
         } catch (error: any) {
             const msg = error.message ? error.message : error;
             throw new Error(`inventoryService.setAyar: ${msg}`);
+        }
+    }
+
+    async getUrunByBarkod(barkodData: string): Promise<IUrun | null> {
+        if (!this.initialized) await this.initializeDatabase();
+        try {
+            // Barkod değerine göre ürünü sorgula
+            const query = `
+                SELECT u.* 
+                FROM ${Tables.URUNLER} u
+                INNER JOIN ${Tables.BARKODLAR} b ON u.id = b.urun_id
+                WHERE b.data = ?
+                LIMIT 1
+            `;
+            const result = await this.db.query(query, [barkodData]);
+
+            if (result.values && result.values.length > 0) {
+                const urun = result.values[0];
+                // Ürünün barkodlarını da getir
+                // const barkodlarQuery = `SELECT * FROM ${Tables.BARKODLAR} WHERE urun_id = ?`;
+                // const barkodlarResult = await this.db.query(barkodlarQuery, [urun.id]);
+                // urun.barkodlar = barkodlarResult.values || [];
+                return urun;
+            }
+            return null;
+        } catch (error: any) {
+            const msg = error.message ? error.message : error;
+            throw new Error(`inventoryService.getUrunByBarkod: ${msg}`);
         }
     }
 }

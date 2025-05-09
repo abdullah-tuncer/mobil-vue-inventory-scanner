@@ -48,7 +48,7 @@
             <br>
             <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
               <v-btn @click="indirimUygula(0)">Yok</v-btn>
-              <v-btn v-for="oran in indirimOranlari" @click="indirimUygula(oran)">%{{oran}}</v-btn>
+              <v-btn v-for="oran in indirimOranlari" @click="indirimUygula(oran)">%{{ oran }}</v-btn>
             </v-btn-toggle>
             <v-text-field
                 v-model="urunDuzenle.indirimli_fiyat"
@@ -250,17 +250,16 @@
       </v-card>
     </v-col>
   </v-row>
-  <audio ref="beepSound" src="/beep.mp3" preload="auto"></audio>
 </template>
 
 <script setup lang="ts">
-
 import {computed, nextTick, onMounted, reactive, ref} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import inventoryService, {Tables} from "../services/inventoryService.ts";
-import {BarcodeScanner} from "@capacitor-mlkit/barcode-scanning";
 import {BarkodOlusturucu} from "../services/BarkodOlusturucu.ts";
 import {useStore} from "vuex";
+import barkodTaramaService from "../services/BarkodTaramaService.ts";
+import {toast} from "vue3-toastify";
 
 const router = useRouter();
 const route = useRoute();
@@ -315,14 +314,14 @@ const sayfayaSigacakBarkodIndir = () => {
     barkodOlusturucu.value.sayfayaSigacakBarkodPdfIndir();
 }
 
-const indirimOranlari = computed(()=>[
+const indirimOranlari = computed(() => [
   Number(store.getters["settings/getAyarByKey"]("indirim_oran_1")),
   Number(store.getters["settings/getAyarByKey"]("indirim_oran_2")),
   Number(store.getters["settings/getAyarByKey"]("indirim_oran_3")),
 ])
 
 const indirimUygula = (oran: number) => {
-  if (oran==0)
+  if (oran == 0)
     urunDuzenle.value.indirimli_fiyat = undefined;
   else
     urunDuzenle.value.indirimli_fiyat = urunDuzenle.value.fiyat - (urunDuzenle.value.fiyat * (oran / 100));
@@ -356,6 +355,16 @@ const filteredBarkodlar = computed(() => {
   return urunDuzenle.value.barkodlar.filter((barkod: any) => !barkod.isDeleted);
 });
 
+const addBarcode = async () => {
+  try {
+    const barkod = await barkodTaramaService.scanBarcode();
+    if (barkod)
+      urunDuzenle.value.barkodlar.push({...barkod, isDeleted: false});
+  } catch (e: any) {
+    toast.error(e.message);
+  }
+}
+
 const removeBarcode = (index: number) => {
   let barkod = filteredBarkodlar.value[index];
   if (barkod.id) {
@@ -366,31 +375,11 @@ const removeBarcode = (index: number) => {
   }
 }
 
-// TODO: servis yapılmaya çalışılcak
-
-const addBarcode = async () => {
-  const granted = await requestPermissions();
-  if (!granted) {
-    // snackbar.value = true;
-    // TODO: toast eklenecek
-    console.log('granted', granted)
-    return;
-  }
-  const {barcodes} = await BarcodeScanner.scan();
-  if (barcodes.length > 0) {
-    playBeepSound(); // Barkod tarandığında bip sesi çal
-    urunDuzenle.value.barkodlar.push({type: barcodes[0].format, data: barcodes[0].rawValue, isDeleted: false});
-  }
-}
-
 const save = async () => {
   try {
     let barkodlar = [...urunDuzenle.value.barkodlar];
     let newData = urunDuzenle.value;
     delete newData.barkodlar;
-
-    console.log('newDAta', JSON.stringify(newData));
-    console.log('barkodlar', JSON.stringify(barkodlar));
 
     await inventoryService.updateItem(Tables.URUNLER, newData);
 
@@ -424,23 +413,6 @@ const cancel = () => {
   }
   duzenleAktif.value = false;
 }
-
-// Bip sesi çalma fonksiyonu
-const beepSound = ref<HTMLAudioElement | null>(null);
-const playBeepSound = () => {
-  if (beepSound.value) {
-    beepSound.value.currentTime = 0;
-    beepSound.value.play().catch(err => {
-      console.error("Ses çalınamadı:", err);
-    });
-  }
-};
-
-const requestPermissions = async (): Promise<boolean> => {
-  const {camera} = await BarcodeScanner.requestPermissions();
-  return camera === 'granted' || camera === 'limited';
-};
-
 
 const createCustomBarcode = () => {
   const timestamp = new Date().getTime();

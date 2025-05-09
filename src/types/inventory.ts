@@ -14,6 +14,7 @@ export interface IUrun {
     aciklama?: string;
     fiyat: number;
     indirimli_fiyat?: number;
+    barkodlar?: Array<IBarkod>;
     created_at: string;
     updated_at?: string;
 }
@@ -27,17 +28,23 @@ export interface IBarkod {
 }
 
 export interface IEnvanterHareketi {
-    id: number;
-    urun_id: number;
-    adet: number;
+    id?: number;
     islem_tipi: 'giris' | 'satis' | 'iade' | 'sayim' | string;
     aciklama?: string;
-    created_at: string;
+    created_at?: string;
+}
+
+export interface IEnvanterHareketiUrun {
+    id?: number;
+    envanter_hareketi_id: number;
+    urun_id: number;
+    adet: number;
 }
 
 export interface IEnvanter {
     id: number;
     urun_id: number;
+    urun?: IUrun;
     adet: number;
     updated_at?: string;
 }

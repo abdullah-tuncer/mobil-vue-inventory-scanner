@@ -23,7 +23,6 @@
         Satış
       </v-btn>
     </v-bottom-navigation>
-
   </v-app>
 </template>
 
@@ -37,8 +36,6 @@ const route = useRoute();
 const store = useStore();
 
 const theme = computed(()=> store.getters['settings/getAyarByKey']("tema"));
-
-
 const activeTab = ref(2);
 
 watch(() => route.path, (newPath) => {

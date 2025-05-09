@@ -4,6 +4,7 @@ import Ayarlar from '../components/Ayarlar.vue'
 import BarkodTarayici from '../components/BarkodTarayici.vue'
 import BarkodOlusturucu from '../components/BarkodOlusturucu.vue'
 import Envanter from '../components/Envanter.vue'
+import EnvanterHareketi from '../components/EnvanterHareketi.vue'
 import Satis from '../components/Satis.vue'
 import UrunEkle from "../components/UrunEkle.vue";
 import Urun from "../components/Urun.vue";
@@ -33,6 +34,11 @@ const routes = [
     path: '/envanter',
     name: 'Envanter',
     component: Envanter
+  },
+  {
+    path: '/envanter-hareketi',
+    name: 'Envanter Hareketi',
+    component: EnvanterHareketi
   },
   {
     path: '/satis',
