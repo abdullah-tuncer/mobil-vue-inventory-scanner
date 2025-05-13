@@ -260,6 +260,7 @@ import {BarkodOlusturucu} from "../services/BarkodOlusturucu.ts";
 import {useStore} from "vuex";
 import barkodTaramaService from "../services/BarkodTaramaService.ts";
 import {toast} from "vue3-toastify";
+import Helper from "../services/Helper.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -341,14 +342,8 @@ const load = async () => {
 }
 
 const indirimOrani = (urun: any) => {
-  let oran = indirimOraniHesapla(urun.fiyat, urun.indirimli_fiyat);
+  let oran = Helper.indirimOraniHesapla(urun.fiyat, urun.indirimli_fiyat);
   return Number(oran).toFixed(1);
-}
-
-// TODO: helpera eklenecek
-const indirimOraniHesapla = (fiyat: number, indirimli_fiyat: number): number => {
-  let oran = 100 - ((indirimli_fiyat / fiyat) * 100);
-  return oran;
 }
 
 const filteredBarkodlar = computed(() => {

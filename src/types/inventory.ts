@@ -29,15 +29,38 @@ export interface IBarkod {
 
 export interface IEnvanterHareketi {
     id?: number;
-    islem_tipi: 'giris' | 'satis' | 'iade' | 'sayim' | string;
+    islem_tipi: EnvanteHareketiIslemTipi;
     aciklama?: string;
     created_at?: string;
+    urunler?: Array<IEnvanterHareketiUrun>;
+}
+
+export enum EnvanteHareketiIslemTipi {
+    GIRIS = "giris",
+    SATIS = "satis",
+    IADE = "iade",
+    SAYIM = "sayim"
+}
+
+export enum EnvanteHareketiIslemTipiLabel {
+    "giris" = "Giriş",
+    "satis" = "Satış",
+    "iade" = "İade",
+    "sayim" = "Sayım"
+}
+
+export enum EnvanteHareketiIslemTipiColor {
+    "giris" = "green darken-2",
+    "satis" = "red darken-1",
+    "iade" = "blue lighten-1",
+    "sayim" = "amber darken-1"
 }
 
 export interface IEnvanterHareketiUrun {
     id?: number;
     envanter_hareketi_id: number;
     urun_id: number;
+    urun?: IUrun;
     adet: number;
 }
 

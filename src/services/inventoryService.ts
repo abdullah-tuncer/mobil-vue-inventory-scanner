@@ -130,10 +130,10 @@ class InventoryService implements IInventoryService {
         }
     }
 
-    async getItems<T extends keyof TableTypeMap>(table: T, fields?: Array<string>): Promise<Array<TableTypeMap[T]>> {
+    async getItems<T extends keyof TableTypeMap>(table: T, fields?: Array<string>|"*", sort?: {field: string, type: "ASC"|"DESC"}): Promise<Array<TableTypeMap[T]>> {
         if (!this.initialized) await this.initializeDatabase();
         try {
-            const fieldsStr = fields ? fields.join(', ') : '*';
+            const fieldsStr = (fields && fields != "*") ? fields.join(', ') : '*';
             let query = `SELECT ${fieldsStr} FROM ${table}`;
             // urun_idye göre urun'ü ekle
             if (table == Tables.ENVANTER) {
@@ -151,6 +151,9 @@ class InventoryService implements IInventoryService {
                     LEFT JOIN ${Tables.URUNLER} u ON e.urun_id = u.id
                 `;
             }
+
+            if (sort)
+                query += ` ORDER BY ${sort.field} ${sort.type}`;
 
             const result = await this.db.query(query);
 
@@ -185,6 +188,35 @@ class InventoryService implements IInventoryService {
                 const barkodlarQuery = `SELECT * FROM ${Tables.BARKODLAR} WHERE urun_id = ?`;
                 const barkodlarResult = await this.db.query(barkodlarQuery, [id]);
                 data.barkodlar = barkodlarResult.values || [];
+            }
+            else if (data && table == Tables.ENVANTER_HAREKETLERI) {
+                // envanter hareketlerine bağlı envanter hareketi ürünlerini çek
+                const envanterHareketiUrunlerquery = `
+                    SELECT e.*,
+                           json_object(
+                                   'id', u.id,
+                                   'ad', u.ad,
+                                   'aciklama', u.aciklama,
+                                   'fiyat', u.fiyat,
+                                   'indirimli_fiyat', u.indirimli_fiyat,
+                                   'created_at', u.created_at,
+                                   'updated_at', u.updated_at
+                           ) as urun
+                    FROM ${Tables.ENVANTER_HAREKETI_URUN} e
+                    LEFT JOIN ${Tables.URUNLER} u ON e.urun_id = u.id
+                    WHERE e.envanter_hareketi_id = ?
+                `;
+                const envanterHareketiUrunlerResult = await this.db.query(envanterHareketiUrunlerquery, [id]);
+                (data as IEnvanterHareketi).urunler = (envanterHareketiUrunlerResult.values || []).map(item => {
+                    if (typeof item.urun === 'string') {
+                        try {
+                            item.urun = JSON.parse(item.urun);
+                        } catch (e) {
+                            console.error('JSON parse error:', e);
+                        }
+                    }
+                    return item;
+                });
             }
             return data;
         } catch (error: any) {

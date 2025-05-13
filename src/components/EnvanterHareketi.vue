@@ -15,10 +15,18 @@
             Eklenen ürün listede varsa toplar.
           </p>
           <v-btn-toggle v-model="item.islem_tipi" class="my-4">
-            <v-btn value="sayim">Sayım</v-btn>
-            <v-btn value="giris">Giriş</v-btn>
-            <v-btn value="satis">Satış</v-btn>
-            <v-btn value="iade">İade</v-btn>
+            <v-btn :value="EnvanteHareketiIslemTipi.SAYIM">
+              {{ EnvanteHareketiIslemTipiLabel[EnvanteHareketiIslemTipi.SAYIM] }}
+            </v-btn>
+            <v-btn :value="EnvanteHareketiIslemTipi.GIRIS">
+              {{ EnvanteHareketiIslemTipiLabel[EnvanteHareketiIslemTipi.GIRIS] }}
+            </v-btn>
+            <v-btn :value="EnvanteHareketiIslemTipi.SATIS">
+              {{ EnvanteHareketiIslemTipiLabel[EnvanteHareketiIslemTipi.SATIS] }}
+            </v-btn>
+            <v-btn :value="EnvanteHareketiIslemTipi.IADE">
+              {{ EnvanteHareketiIslemTipiLabel[EnvanteHareketiIslemTipi.IADE] }}
+            </v-btn>
           </v-btn-toggle>
           <v-textarea v-model="item.aciklama" class="my-2"/>
           <v-divider/>
@@ -76,8 +84,14 @@ import UrunPicker from "./UrunPicker.vue";
 import {useRouter} from "vue-router";
 import {reactive, ref} from "vue";
 import {EnvanterHareketi} from "../classes/EnvanterHareketi.ts";
-import type {IEnvanterHareketiUrun, IUrun} from "../types/inventory.ts";
+import {
+  EnvanteHareketiIslemTipi,
+  EnvanteHareketiIslemTipiLabel,
+  type IEnvanterHareketiUrun,
+  type IUrun
+} from "../types/inventory.ts";
 import inventoryService, {Tables} from "../services/inventoryService.ts";
+import {toast} from "vue3-toastify";
 
 const router = useRouter();
 const form = ref();
@@ -116,19 +130,23 @@ const removeListItem = (index: number) => {
 
 const save = async () => {
   try {
-    const hareketId = await inventoryService.addItem(Tables.ENVANTER_HAREKETLERI, {
-      islem_tipi: item.value.islem_tipi,
-      aciklama: item.value.aciklama
-    });
-    for (const listElement of list) {
-      let hareketUrun: IEnvanterHareketiUrun = {
-        envanter_hareketi_id: hareketId,
-        adet: listElement.adet,
-        urun_id: listElement.urun.id
+    if (list.length > 0) {
+      const hareketId = await inventoryService.addItem(Tables.ENVANTER_HAREKETLERI, {
+        islem_tipi: item.value.islem_tipi,
+        aciklama: item.value.aciklama
+      });
+      for (const listElement of list) {
+        let hareketUrun: IEnvanterHareketiUrun = {
+          envanter_hareketi_id: hareketId,
+          adet: listElement.adet,
+          urun_id: listElement.urun.id
+        }
+        await inventoryService.addItem(Tables.ENVANTER_HAREKETI_URUN, hareketUrun);
       }
-      await inventoryService.addItem(Tables.ENVANTER_HAREKETI_URUN, hareketUrun);
+      await router.push("/envanter");
+    } else {
+      toast.warning("Listeye ürün eklenmedi.");
     }
-    await router.push("/envanter");
   } catch (e) {
     console.error("Error - EnvanterHareketi.vue - save():", e);
   }

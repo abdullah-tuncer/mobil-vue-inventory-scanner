@@ -14,19 +14,30 @@
             <v-data-table
                 :headers="envanterHeaders"
                 :items="envanterItems"
+                @click:row="envanterUrunDetay"
             >
               <template #top>
                 <v-btn
                     @click="router.push('/envanter-hareketi')"
-                    class="my-2"
                     rounded="xs"
                     prepend-icon="mdi-plus-minus-variant"
+                    class="my-2"
                     block
                 >
                   Ekle/Çıkar
                 </v-btn>
               </template>
             </v-data-table>
+            <v-btn
+                @click="router.push('/envanter-hareketi-gecmis')"
+                prepend-icon="mdi-history"
+                color="secondary"
+                variant="tonal"
+                class="my-2"
+                block
+            >
+              Geçmiş
+            </v-btn>
           </v-tabs-window-item>
           <v-tabs-window-item value="urunler">
             <v-data-table
@@ -99,6 +110,13 @@ const load = async () => {
 
 //@ts-ignore
 const urunDetay = (event: Event, row: any) => {
-  router.push('/urun/' + row.item.id);
+  const item: IUrun = row.item;
+  router.push('/urun/' + item.id);
+}
+
+//@ts-ignore
+const envanterUrunDetay = (event: Event, row: any) => {
+  const item: IEnvanter = row.item;
+  router.push('/urun/' + item.urun_id);
 }
 </script>

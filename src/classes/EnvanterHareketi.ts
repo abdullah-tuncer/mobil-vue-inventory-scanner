@@ -1,9 +1,9 @@
-import type {IEnvanterHareketi, IEnvanterHareketiUrun} from "../types/inventory.ts";
+import {EnvanteHareketiIslemTipi, type IEnvanterHareketi, type IEnvanterHareketiUrun} from "../types/inventory.ts";
 
 export class EnvanterHareketi implements IEnvanterHareketi {
     id!: number;
     aciklama?: string = "";
     created_at!: string;
-    islem_tipi: "giris" | "satis" | "iade" | "sayim" | string = "sayim";
+    islem_tipi: EnvanteHareketiIslemTipi = EnvanteHareketiIslemTipi.SAYIM;
     urunler: Array<IEnvanterHareketiUrun> = [];
 }
