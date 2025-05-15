@@ -31,6 +31,7 @@ export interface IEnvanterHareketi {
     id?: number;
     islem_tipi: EnvanteHareketiIslemTipi;
     aciklama?: string;
+    satis_id?: number;
     created_at?: string;
     urunler?: Array<IEnvanterHareketiUrun>;
 }
@@ -73,21 +74,22 @@ export interface IEnvanter {
 }
 
 export interface ISatis {
-    id: number;
+    id?: number;
     toplam_tutar: number;
-    ekstra_indirim_tutarı: number;
-    created_at: string;
+    ekstra_indirim_tutari: number;
+    created_at?: string;
 }
 
 export interface ISatisUrunu {
-    id: number;
-    satis_id: number;
+    id?: number;
+    satis_id?: number;
     urun_id: number;
+    urun?: IUrun;
     adet: number;
     birim_fiyat: number;
     indirimli_birim_fiyat?: number;
     tutar: number;
-    created_at: string;
+    created_at?: string;
 }
 
 export interface IGuncelStok {
