@@ -1,7 +1,10 @@
 import {BarcodeScanner} from "@capacitor-mlkit/barcode-scanning";
+import store from '../store';
 
-export class BarkodTaramaService {
+class BarkodTaramaService {
     private beepSound: HTMLAudioElement | null = null;
+    private scanCallback: ((result: any) => void) | null = null;
+    private scanLock: boolean = false;
 
     constructor() {
         // Ses dosyasını yükle
@@ -62,19 +65,28 @@ export class BarkodTaramaService {
         }
 
         try {
-            // Tarama başladığında arka planı şeffaf yap
+            this.scanCallback = callback;
             document.querySelector('body')?.classList.add('transparent-bg');
-
+            await store.dispatch('scanner/startScanning');
+            // Barkod tarama dinleyicisini ekle
             // @ts-ignore
             await BarcodeScanner.addListener('barcodeScanned', (result: any) => {
+                if (this.scanLock)
+                    return;
+                this.scanLock = true;
                 this.playBeepSound();
-                callback(result);
+                if (this.scanCallback) {
+                    this.scanCallback(result);
+                }
+                setTimeout(() => {
+                    this.scanLock = false;
+                }, 1000);
             });
-
             await BarcodeScanner.startScan();
             return true;
         } catch (error) {
             console.error('Sürekli tarama başlatılamadı:', error);
+            await store.dispatch('scanner/stopScanning');
             return false;
         }
     }
@@ -84,14 +96,22 @@ export class BarkodTaramaService {
      */
     async stopContinuousScan(): Promise<void> {
         try {
-            // Arka plan şeffaflığını kaldır
             document.querySelector('body')?.classList.remove('transparent-bg');
-
+            await store.dispatch('scanner/stopScanning');
             await BarcodeScanner.removeAllListeners();
             await BarcodeScanner.stopScan();
+            this.scanCallback = null;
         } catch (error) {
             console.error('Tarama durdurulamadı:', error);
         }
+    }
+
+    /**
+     * Tarama durumunu kontrol eder
+     * @returns Tarama aktif mi
+     */
+    isScanningActive(): boolean {
+        return store.getters['scanner/isScanning'];
     }
 }
 

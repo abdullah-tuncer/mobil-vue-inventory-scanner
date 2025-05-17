@@ -218,6 +218,10 @@ class InventoryService implements IInventoryService {
                     return item;
                 });
             }
+            else if (data && table == Tables.ENVANTER_HAREKETLERI) {
+
+
+            }
             return data;
         } catch (error: any) {
             const msg = error.message ? error.message : error;

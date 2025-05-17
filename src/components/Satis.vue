@@ -51,6 +51,26 @@
               </v-col>
             </v-row>
             <v-row>
+              <v-col cols="12">
+                <v-label>İndirim Uygula</v-label>
+                <br>
+                <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
+                  <v-btn @click="indirimUygula(0)" size="small">Yok</v-btn>
+                  <v-btn v-for="oran in indirimOranlari" @click="indirimUygula(oran)" size="small">%{{ oran }}</v-btn>
+                </v-btn-toggle>
+                <v-number-input
+                    v-model="satis.ekstra_indirim_tutari"
+                    :precision="2"
+                    :min="0"
+                    append-inner-icon="mdi-currency-try"
+                    label="Ekstra İndirim Tutarı"
+                    control-variant="hidden"
+                    density="compact"
+                    class="mt-2"
+                    hide-details
+                    reverse
+                />
+              </v-col>
               <v-col cols="6">Toplam:</v-col>
               <v-col cols="6" class="text-right">{{ toplam }}₺</v-col>
             </v-row>
@@ -73,14 +93,37 @@
 
 <script setup lang="ts">
 import UrunPicker from "./UrunPicker.vue";
-import {computed, onMounted, ref} from "vue";
+import {computed, onUnmounted, ref} from "vue";
 import {Satis} from "../classes/Satis.ts";
 import {EnvanteHareketiIslemTipi, type ISatisUrunu, type IUrun} from "../types/inventory.ts";
 import {toast} from "vue3-toastify";
 import inventoryService, {Tables} from "../services/inventoryService.ts";
+import {useStore} from "vuex";
+import BarkodTaramaService from "../services/BarkodTaramaService.ts";
 
 const satis = ref(new Satis());
 const urun = ref<IUrun>();
+const store = useStore();
+
+const indirimOranlari = computed(() => [
+  Number(store.getters["settings/getAyarByKey"]("indirim_oran_1")),
+  Number(store.getters["settings/getAyarByKey"]("indirim_oran_2")),
+  Number(store.getters["settings/getAyarByKey"]("indirim_oran_3")),
+]);
+
+const indirimUygula = (oran: number) => {
+  if (oran == 0)
+    satis.value.ekstra_indirim_tutari = 0;
+  else {
+    let total = 0;
+    for (const item of satis.value.urunler) {
+      const fiyat = item.indirimli_birim_fiyat || item.birim_fiyat;
+      total += fiyat * item.adet;
+    }
+    total.toFixed(2);
+    satis.value.ekstra_indirim_tutari = Number(toplam.value) * (oran / 100);
+  }
+}
 
 const addList = () => {
   if (urun.value) {
@@ -110,17 +153,47 @@ const onAdetChange = (item: ISatisUrunu) => {
   }
 }
 
-onMounted(() => {
-  load();
+const cokluTarama = async () => {
+  try {
+    const success = await BarkodTaramaService.startContinuousScan(async (result) => {
+      if (result && result.barcode) {
+        const barkodDegeri = result.barcode.rawValue;
+        const bulunanUrun = await inventoryService.getUrunByBarkod(barkodDegeri);
+        if (bulunanUrun) {
+          const existingItem = satis.value.urunler.find(item => item.urun?.id === bulunanUrun.id);
+          if (existingItem) {
+            existingItem.adet += 1;
+          } else {
+            satis.value.urunler.push({
+              urun: bulunanUrun,
+              adet: 1,
+              birim_fiyat: bulunanUrun.fiyat,
+              indirimli_birim_fiyat: bulunanUrun.indirimli_fiyat || undefined,
+              tutar: bulunanUrun.indirimli_fiyat || bulunanUrun.fiyat,
+              urun_id: bulunanUrun.id
+            });
+          }
+          toast.success(`${bulunanUrun.ad} eklendi`);
+        } else {
+          toast.warning(`Barkod (${barkodDegeri}) için ürün bulunamadı`);
+        }
+      }
+    });
+    if (!success) {
+      toast.error("Tarama başlatılamadı. Kamera izinlerini kontrol edin.");
+    }
+  } catch (e: any) {
+    console.error("Error - Satis.vue - cokluTarama():", e);
+    toast.error(e.message || "Tarama sırasında bir hata oluştu");
+    await BarkodTaramaService.stopContinuousScan();
+  }
+}
+
+onUnmounted(() => {
+  if (BarkodTaramaService.isScanningActive()) {
+    BarkodTaramaService.stopContinuousScan();
+  }
 })
-
-const load = () => {
-  // ürünleri yükle
-}
-
-const cokluTarama = () => {
-  // ürünleri barkodlarından bul sonra listeye ekle
-}
 
 const kaydet = async () => {
   try {
@@ -179,6 +252,7 @@ const toplam = computed(() => {
     const fiyat = item.indirimli_birim_fiyat || item.birim_fiyat;
     total += fiyat * item.adet;
   }
+  total -= satis.value.ekstra_indirim_tutari;
   return total.toFixed(2);
 })
 </script>
