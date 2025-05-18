@@ -77,6 +77,7 @@ export interface ISatis {
     id?: number;
     toplam_tutar: number;
     ekstra_indirim_tutari: number;
+    satis_urunleri?: Array<ISatisUrunu>;
     created_at?: string;
 }
 

@@ -218,9 +218,33 @@ class InventoryService implements IInventoryService {
                     return item;
                 });
             }
-            else if (data && table == Tables.ENVANTER_HAREKETLERI) {
-
-
+            else if (data && table == Tables.SATISLAR) {
+                const satisUrunlerQuery = `
+                    SELECT s.*,
+                           json_object(
+                                   'id', u.id,
+                                   'ad', u.ad,
+                                   'aciklama', u.aciklama,
+                                   'fiyat', u.fiyat,
+                                   'indirimli_fiyat', u.indirimli_fiyat,
+                                   'created_at', u.created_at,
+                                   'updated_at', u.updated_at
+                           ) as urun
+                    FROM ${Tables.SATIS_URUNLERI} s
+                    LEFT JOIN ${Tables.URUNLER} u ON s.urun_id = u.id
+                    WHERE satis_id = ?
+                `;
+                const satisUrunlerResult = await this.db.query(satisUrunlerQuery, [id]);
+                (data as ISatis).satis_urunleri = (satisUrunlerResult.values || []).map(item => {
+                    if (typeof item.urun === 'string') {
+                        try {
+                            item.urun = JSON.parse(item.urun);
+                        } catch (e) {
+                            console.error('JSON parse error:', e);
+                        }
+                    }
+                    return item;
+                });
             }
             return data;
         } catch (error: any) {

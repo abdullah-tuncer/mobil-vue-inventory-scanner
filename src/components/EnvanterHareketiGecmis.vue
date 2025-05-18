@@ -69,6 +69,9 @@ const load = async () => {
 //@ts-ignore
 const detay = (event: Event, row: any) => {
   const item: IEnvanterHareketi = row.item;
-  router.push('/envanter-hareketi-gecmis-detay/' + item.id);
+  if (item.satis_id)
+    router.push('/satis-detay/' + item.satis_id);
+  else
+    router.push('/envanter-hareketi-gecmis-detay/' + item.id);
 }
 </script>

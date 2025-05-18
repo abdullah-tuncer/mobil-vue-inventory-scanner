@@ -10,6 +10,7 @@ import UrunEkle from "../components/UrunEkle.vue";
 import Urun from "../components/Urun.vue";
 import EnvanterHareketiGecmis from "../components/EnvanterHareketiGecmis.vue";
 import EnvanterHareketiGecmisDetay from "../components/EnvanterHareketiGecmisDetay.vue";
+import SatisDetay from "../components/SatisDetay.vue";
 
 const routes = [
   {
@@ -39,23 +40,28 @@ const routes = [
   },
   {
     path: '/envanter-hareketi',
-    name: 'Envanter Hareketi',
+    name: 'EnvanterHareketi',
     component: EnvanterHareketi
   },
   {
     path: '/envanter-hareketi-gecmis',
-    name: 'Envanter Hareketi Geçmişi',
+    name: 'EnvanterHareketiGecmisi',
     component: EnvanterHareketiGecmis
   },
   {
     path: '/envanter-hareketi-gecmis-detay/:id',
-    name: 'Envanter Hareketi Geçmiş Detayı',
+    name: 'EnvanterHareketiGecmisDetayi',
     component: EnvanterHareketiGecmisDetay
   },
   {
     path: '/satis',
     name: 'Satis',
     component: Satis
+  },
+  {
+    path: '/satis-detay/:id',
+    name: 'SatisDetay',
+    component: SatisDetay
   },
   {
     path: '/urun-ekle',

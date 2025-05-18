@@ -1,6 +1,6 @@
 class Helper {
     dateFormat(date: string): string {
-        return new Date(date).toLocaleDateString();
+        return new Date(date).toLocaleString();
     }
 
     indirimOraniHesapla(fiyat: number, indirimli_fiyat: number): number  {
