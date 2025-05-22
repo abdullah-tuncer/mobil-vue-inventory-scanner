@@ -28,8 +28,8 @@
               {{ EnvanteHareketiIslemTipiLabel[EnvanteHareketiIslemTipi.IADE] }}
             </v-btn>
           </v-btn-toggle>
-          <v-textarea v-model="item.aciklama" class="my-2"/>
-          <v-divider/>
+          <v-textarea v-model="item.aciklama" class="my-2" hide-details/>
+          <v-divider class="my-3"/>
           <v-form ref="form">
             <urun-picker
                 v-model="listItem.urun"

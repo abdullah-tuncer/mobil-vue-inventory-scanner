@@ -5,87 +5,129 @@
     </v-col>
     <v-col cols="12">
       <v-card>
-        <v-row class="ma-auto">
-          <v-col cols="12">
-            <urun-picker v-model="urun" hide-details/>
-          </v-col>
-          <v-col cols="12">
-            <v-btn @click="addList" prepend-icon="mdi-plus" block>Ekle</v-btn>
-          </v-col>
-          <v-col cols="12" class="py-1">
-            <v-divider/>
-          </v-col>
-          <v-col cols="12">
-            <v-btn
-                @click="cokluTarama"
-                prepend-icon="mdi-barcode-scan"
-                color="secondary"
-                block
-            >
-              Çoklu Tarama
-            </v-btn>
-          </v-col>
-          <v-col cols="12">
-            <v-row v-for="item in satis.urunler">
-              <v-col cols="12" class="py-1">{{ (item.urun as IUrun).ad }}</v-col>
-              <v-col cols="6" class="py-1">
+        <v-card-title class="pb-0">Ürün Ekle</v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col cols="12">
+              <urun-picker v-model="urun" hide-details>
+                <template #append class="pl-1">
+                  <v-btn @click="addList" icon="mdi-plus" size="small" />
+                </template>
+              </urun-picker>
+            </v-col>
+            <v-col cols="12">
+              <v-btn
+                  @click="cokluTarama"
+                  prepend-icon="mdi-barcode-scan"
+                  color="secondary"
+                  block
+              >
+                Çoklu Tarama
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-card-text>
+
+        <v-divider/>
+
+        <v-card-title class="pb-0 d-flex align-center">
+          <span>Sepet</span>
+          <v-spacer/>
+          <v-chip color="primary" variant="outlined" v-if="satis.urunler.length > 0">
+            {{ satis.urunler.length }} Ürün
+          </v-chip>
+        </v-card-title>
+        <v-card-text>
+          <v-list v-if="satis.urunler.length > 0">
+            <v-list-item v-for="(item, index) in satis.urunler" :key="index">
+              <v-list-item-title class="text-wrap">{{ (item.urun as IUrun).ad }}</v-list-item-title>
+              <v-list-item-subtitle>
+                <span v-if="item.indirimli_birim_fiyat">
+                  <del class="text-grey">{{ item.birim_fiyat }}₺</del>
+                  {{ item.indirimli_birim_fiyat }}₺
+                </span>
+                <span v-else>{{ item.birim_fiyat }}₺</span>
+              </v-list-item-subtitle>
+              <template #append>
                 <v-number-input
                     v-model="item.adet"
                     @update:modelValue="onAdetChange(item)"
                     :min="0"
                     style="zoom: 0.75"
+                    width="150"
                     control-variant="split"
-                    density="comfortable"
-                    class="mx-1"
-                    hide-details
-                />
-              </v-col>
-              <v-col cols="6" class="text-right py-1" align-self="center">
-                <sup v-if="item.indirimli_birim_fiyat">
-                  <del>{{ item.birim_fiyat }}₺</del>
-                </sup>
-                {{ item.indirimli_birim_fiyat || item.birim_fiyat }}₺
-              </v-col>
-              <v-col cols="12" class="py-1">
-                <v-divider/>
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12">
-                <v-label>İndirim Uygula</v-label>
-                <br>
-                <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
-                  <v-btn @click="indirimUygula(0)" size="small">Yok</v-btn>
-                  <v-btn v-for="oran in indirimOranlari" @click="indirimUygula(oran)" size="small">%{{ oran }}</v-btn>
-                </v-btn-toggle>
-                <v-number-input
-                    v-model="satis.ekstra_indirim_tutari"
-                    :precision="2"
-                    :min="0"
-                    append-inner-icon="mdi-currency-try"
-                    label="Ekstra İndirim Tutarı"
-                    control-variant="hidden"
                     density="compact"
-                    class="mt-2"
                     hide-details
-                    reverse
                 />
-              </v-col>
-              <v-col cols="6">Toplam:</v-col>
-              <v-col cols="6" class="text-right">{{ toplam }}₺</v-col>
-            </v-row>
-          </v-col>
-          <v-col cols="6">
-            <v-btn @click="sifirla" color="secondary" block>
-              Sıfırla
-            </v-btn>
-          </v-col>
-          <v-col cols="6">
-            <v-btn @click="kaydet" color="primary" block>
-              Kaydet
-            </v-btn>
-          </v-col>
-        </v-row>
+              </template>
+            </v-list-item>
+          </v-list>
+          <v-alert v-else type="info" variant="tonal" class="mt-2">
+            Henüz sepete ürün eklenmedi
+          </v-alert>
+        </v-card-text>
+
+        <v-divider/>
+
+        <v-card-title class="pb-0">İndirim ve Toplam</v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col cols="12">
+              <v-label>İndirim Uygula</v-label>
+              <br>
+              <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
+                <v-btn @click="indirimUygula(0)" size="small">Yok</v-btn>
+                <v-btn v-for="oran in indirimOranlari" @click="indirimUygula(oran)" size="small">%{{ oran }}</v-btn>
+              </v-btn-toggle>
+              <v-number-input
+                  v-model="satis.ekstra_indirim_tutari"
+                  :precision="2"
+                  :min="0"
+                  append-inner-icon="mdi-currency-try"
+                  label="Ekstra İndirim Tutarı"
+                  control-variant="hidden"
+                  density="compact"
+                  class="mt-2"
+                  hide-details
+                  reverse
+              />
+            </v-col>
+            <v-col cols="12">
+              <v-card variant="outlined" class="pa-3">
+                <v-row>
+                  <v-col cols="6" class="text-subtitle-1 font-weight-bold">Ara Toplam:</v-col>
+                  <v-col cols="6" class="text-right text-subtitle-1">{{ araToplam }}₺</v-col>
+                </v-row>
+                <v-row v-if="satis.ekstra_indirim_tutari > 0">
+                  <v-col cols="6" class="text-subtitle-1 font-weight-bold">İndirim:</v-col>
+                  <v-col cols="6" class="text-right text-subtitle-1 text-red">
+                    -{{ satis.ekstra_indirim_tutari.toFixed(2) }}₺
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+                <v-row>
+                  <v-col cols="6" class="text-h6 font-weight-bold">Toplam:</v-col>
+                  <v-col cols="6" class="text-right text-h6 font-weight-bold">{{ toplam }}₺</v-col>
+                </v-row>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-row>
+            <v-col cols="6">
+              <v-btn @click="sifirla" color="secondary" block>
+                Sıfırla
+              </v-btn>
+            </v-col>
+            <v-col cols="6">
+              <v-btn @click="kaydet" color="primary" block :disabled="satis.urunler.length === 0">
+                Kaydet
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-card-actions>
       </v-card>
     </v-col>
   </v-row>
@@ -111,6 +153,15 @@ const indirimOranlari = computed(() => [
   Number(store.getters["settings/getAyarByKey"]("indirim_oran_3")),
 ]);
 
+const araToplam = computed(() => {
+  let total = 0;
+  for (const item of satis.value.urunler) {
+    const fiyat = item.indirimli_birim_fiyat || item.birim_fiyat;
+    total += fiyat * item.adet;
+  }
+  return total.toFixed(2);
+});
+
 const indirimUygula = (oran: number) => {
   if (oran == 0)
     satis.value.ekstra_indirim_tutari = 0;
@@ -121,7 +172,7 @@ const indirimUygula = (oran: number) => {
       total += fiyat * item.adet;
     }
     total.toFixed(2);
-    satis.value.ekstra_indirim_tutari = Number(toplam.value) * (oran / 100);
+    satis.value.ekstra_indirim_tutari = Number((Number(toplam.value) * (oran / 100)).toFixed(2));
   }
 }
 
@@ -256,3 +307,23 @@ const toplam = computed(() => {
   return total.toFixed(2);
 })
 </script>
+
+<style scoped>
+.v-list-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.v-theme--dark .v-list-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.v-list-item:last-child {
+  border-bottom: none;
+}
+
+.v-list-item-title {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+</style>

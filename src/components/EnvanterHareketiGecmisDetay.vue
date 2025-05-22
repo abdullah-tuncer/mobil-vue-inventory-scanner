@@ -8,36 +8,81 @@
     </v-col>
     <v-col cols="12">
       <v-card>
-        <v-row class="ma-auto">
-          <v-col cols="6" class="align-center">
-            {{ tarih }}
-          </v-col>
-          <v-col cols="6" class="text-right">
-            <v-chip
-                :color="EnvanteHareketiIslemTipiColor[islemTipi]"
-                :text="EnvanteHareketiIslemTipiLabel[islemTipi]"
-                size="small"
-                dark
-            />
-          </v-col>
-          <v-col cols="12">
-            <p>{{ envanterHareketi?.aciklama }}</p>
-          </v-col>
-          <v-col cols="12" class="ma-0">
-            <v-table class="border">
-              <tbody>
-              <tr v-for="item in envanterHareketi?.urunler" @click="router.push('/urun/' + item.urun_id)">
-                <td>
-                  {{ item?.urun?.ad }}
-                </td>
-                <td>
-                  {{ item.adet }}
-                </td>
-              </tr>
-              </tbody>
-            </v-table>
-          </v-col>
-        </v-row>
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-calendar" size="small" class="mr-1"/>
+          {{ tarih }}
+          <v-spacer/>
+          <v-chip
+              :color="EnvanteHareketiIslemTipiColor[islemTipi]"
+              :text="EnvanteHareketiIslemTipiLabel[islemTipi]"
+              size="small"
+              dark
+          />
+        </v-card-title>
+
+        <v-divider/>
+
+        <v-card-text v-if="envanterHareketi?.aciklama">
+          <v-alert type="info" variant="tonal" class="mb-0">
+            {{ envanterHareketi?.aciklama }}
+          </v-alert>
+        </v-card-text>
+        <v-card-text>
+          <h2>İşlem Detayı</h2>
+          <v-list>
+            <v-list-item
+                v-for="(item, index) in envanterHareketi?.urunler"
+                :key="index"
+                class="px-0"
+                @click="router.push('/urun/' + item.urun_id)"
+            >
+              <v-list-item-title class="text-wrap">{{ item?.urun?.ad }}</v-list-item-title>
+              <template v-slot:append>
+                <div class="d-flex align-center">
+                  <v-chip
+                      :color="item.adet > 0 ? 'success' : 'error'"
+                      size="small"
+                  >
+                    {{ item.adet > 0 ? '+' : '' }}{{ item.adet }}
+                  </v-chip>
+                  <v-icon icon="mdi-chevron-right" class="ml-2"/>
+                </div>
+              </template>
+            </v-list-item>
+          </v-list>
+          <v-alert
+              v-if="!envanterHareketi?.urunler || envanterHareketi.urunler.length === 0"
+              type="warning"
+              variant="tonal"
+              class="mt-2"
+          >
+            Bu işlemde ürün bulunmamaktadır.
+          </v-alert>
+        </v-card-text>
+
+        <v-card-text>
+          <v-card variant="outlined" class="pa-3">
+            <v-row>
+              <v-col cols="6" class="text-subtitle-1 py-1">İşlem Tipi:</v-col>
+              <v-col cols="6" class="text-right py-1">
+                <v-chip
+                    :color="EnvanteHareketiIslemTipiColor[islemTipi]"
+                    :text="EnvanteHareketiIslemTipiLabel[islemTipi]"
+                    size="small"
+                    dark
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="6" class="text-subtitle-1 py-1">İşlem Tarihi:</v-col>
+              <v-col cols="6" class="text-right text-subtitle-1 py-1">{{ tarih }}</v-col>
+            </v-row>
+            <v-row v-if="envanterHareketi?.id">
+              <v-col cols="6" class="text-subtitle-1 py-1">İşlem No:</v-col>
+              <v-col cols="6" class="text-right text-subtitle-1 py-1">#{{ envanterHareketi.id }}</v-col>
+            </v-row>
+          </v-card>
+        </v-card-text>
       </v-card>
     </v-col>
   </v-row>
@@ -77,7 +122,7 @@ const tarih = computed(() => {
 })
 
 const islemTipi = computed(() => {
-  return (envanterHareketi.value as IEnvanterHareketi).islem_tipi;
+  return (envanterHareketi.value as IEnvanterHareketi)?.islem_tipi;
 })
 
 const load = async () => {
@@ -91,5 +136,21 @@ const load = async () => {
 </script>
 
 <style scoped>
+.v-list-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
 
+.v-theme--dark .v-list-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.v-list-item:last-child {
+  border-bottom: none;
+}
+
+.v-list-item-title {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
 </style>

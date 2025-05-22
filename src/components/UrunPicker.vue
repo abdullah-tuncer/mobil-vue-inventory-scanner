@@ -11,6 +11,9 @@
     <template #append-inner>
       <v-icon @click="scan" icon="mdi-barcode-scan"/>
     </template>
+    <template v-if="$slots.append" #append>
+      <slot name="append"></slot>
+    </template>
   </v-select>
 </template>
 
