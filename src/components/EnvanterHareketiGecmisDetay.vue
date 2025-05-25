@@ -2,7 +2,7 @@
   <v-row class="ma-auto">
     <v-col cols="12" class="py-0">
       <h2>
-        <v-btn @click="router.back()" variant="text" icon="mdi-arrow-left" class="mt-n1 ml-n4"/>
+        <v-btn v-if="!hideBackButton" @click="router.back()" variant="text" icon="mdi-arrow-left" class="mt-n1 ml-n4"/>
         {{ title }}
       </h2>
     </v-col>
@@ -102,6 +102,7 @@ import Helper from "../services/Helper.ts";
 const envanterHareketi = ref<IEnvanterHareketi>();
 const route = useRoute();
 const router = useRouter();
+const props = defineProps<{ hareketId?: number | string, hideBackButton?: boolean }>();
 
 onMounted(async () => {
   await load();
@@ -127,7 +128,7 @@ const islemTipi = computed(() => {
 
 const load = async () => {
   try {
-    const id = route.params.id as string;
+    const id = props.hareketId?.toString() || (route.params.id as string);
     envanterHareketi.value = await inventoryService.getItemById(Tables.ENVANTER_HAREKETLERI, id) as IEnvanterHareketi;
   } catch (e) {
     console.error(e)

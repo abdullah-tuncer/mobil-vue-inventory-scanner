@@ -1,15 +1,16 @@
 import {SQLiteDBConnection} from "@capacitor-community/sqlite";
 import SQLiteService from "./sqliteService.ts";
 import type {ISQLiteService} from "./sqliteService.ts";
-import type {
-    IAyar,
-    IBarkod,
-    IEnvanter,
-    IEnvanterHareketi,
-    IEnvanterHareketiUrun,
-    ISatis,
-    ISatisUrunu,
-    IUrun
+import {
+    EnvanteHareketiIslemTipi,
+    type IAyar,
+    type IBarkod,
+    type IEnvanter,
+    type IEnvanterHareketi,
+    type IEnvanterHareketiUrun,
+    type ISatis,
+    type ISatisUrunu,
+    type IUrun
 } from "../types/inventory.ts";
 
 interface IInventoryService {
@@ -82,6 +83,10 @@ class InventoryService implements IInventoryService {
                                  SET adet = adet + NEW.adet,
                                      updated_at = CURRENT_TIMESTAMP
                                  WHERE urun_id = NEW.urun_id;
+                                 
+                                 -- Stok miktarı sıfır ise kaydı sil
+                                 DELETE FROM envanter 
+                                 WHERE urun_id = NEW.urun_id AND adet = 0;
                              END;`
                         ]
                     },
@@ -250,6 +255,28 @@ class InventoryService implements IInventoryService {
         } catch (error: any) {
             const msg = error.message ? error.message : error;
             throw new Error(`inventoryService.getItemById: ${msg}`);
+        }
+    }
+
+    async urunSatisBilgileri(urun_id: number | string): Promise<Array<IEnvanterHareketiUrun & {
+        islem_tipi: EnvanteHareketiIslemTipi,
+        created_at: string,
+        satis_id: number | null
+    }>> {
+        if (!this.initialized) await this.initializeDatabase();
+        try {
+            const query = `
+                SELECT ehu.*, eh.islem_tipi, eh.created_at, eh.satis_id
+                FROM ${Tables.ENVANTER_HAREKETI_URUN} ehu
+                LEFT JOIN ${Tables.ENVANTER_HAREKETLERI} eh ON ehu.envanter_hareketi_id = eh.id
+                WHERE urun_id = ?
+                ORDER BY eh.created_at DESC
+            `;
+            const result = await this.db.query(query, [urun_id]);
+            return result.values || [];
+        } catch (error: any) {
+            const msg = error.message ? error.message : error;
+            throw new Error(`inventoryService.urunSatisBilgileri: ${msg}`);
         }
     }
 

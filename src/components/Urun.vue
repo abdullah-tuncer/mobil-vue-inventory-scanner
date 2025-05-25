@@ -69,8 +69,6 @@
                 Özel Barkod Oluştur
               </v-btn>
             </v-alert>
-
-
           </v-col>
           <v-col cols="12">
             <v-btn @click="addBarcode" prepend-icon="mdi-barcode-scan" rounded="1" variant="outlined" block>
@@ -229,23 +227,39 @@
           </v-col>
 
           <v-col cols="12">
-            <v-tabs v-model="tab" align-tabs="center" grow>
-              <v-tab value="tablo" prepend-icon="mdi-table"/>
-              <v-tab value="grafik" prepend-icon="mdi-chart-line"/>
-            </v-tabs>
-            <v-tabs-window v-model="tab">
-              <v-tabs-window-item value="tablo">
-                <v-data-table
-                    :headers="headers"
-                    :items="items"
-                >
-                </v-data-table>
-              </v-tabs-window-item>
-              <v-tabs-window-item value="grafik">
-                grafikelr
-              </v-tabs-window-item>
-            </v-tabs-window>
+            <v-data-table
+                :headers="headers"
+                :items="urunHareketiBilgileri"
+                @click:row="detay"
+            >
+              <template #[`item.tarih`]="{item}">
+                {{ Helper.dateFormat(item.created_at) }}
+              </template>
+              <template #[`item.islem`]="{item}">
+                <v-chip
+                    :color="EnvanteHareketiIslemTipiColor[item.islem_tipi]"
+                    :text="EnvanteHareketiIslemTipiLabel[item.islem_tipi]"
+                    size="small"
+                    dark
+                />
+              </template>
+            </v-data-table>
           </v-col>
+
+          <v-dialog v-model="dialogVisible">
+            <v-card>
+                <component
+                    class="mt-2"
+                  :is="currentComponent"
+                  :satis-id="selectedItem?.satis_id"
+                  :hareket-id="selectedItem?.id"
+                  hide-back-button
+                />
+              <v-card-actions>
+                <v-btn @click="dialogVisible=false" color="secondary">Kapat</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
         </v-row>
       </v-card>
     </v-col>
@@ -261,20 +275,31 @@ import {useStore} from "vuex";
 import barkodTaramaService from "../services/BarkodTaramaService.ts";
 import {toast} from "vue3-toastify";
 import Helper from "../services/Helper.ts";
+import {
+  EnvanteHareketiIslemTipi,
+  EnvanteHareketiIslemTipiColor, EnvanteHareketiIslemTipiLabel,
+  type IEnvanterHareketiUrun
+} from "../types/inventory.ts";
+import SatisDetay from "./SatisDetay.vue";
+import EnvanterHareketiGecmisDetay from "./EnvanterHareketiGecmisDetay.vue";
 
 const router = useRouter();
 const route = useRoute();
 const store = useStore();
 const duzenleAktif = ref(false);
-const tab = ref("tablo");
 
 const urun = ref<any>(null);
 const urunDuzenle = ref<any>(null);
 const headers = ref([
-  {title: "Tarih", value: "created_at", key: "created_at"},
-  {title: "Adet", value: "adet", key: "adet"},
-  {title: "Tutar", value: "tutar", key: "tutar", align: "end" as const}
+  {title: "Tarih", key: "tarih"},
+  {title: "İşlem", key: "islem"},
+  {title: "Adet", value: "adet"}
 ]);
+const urunHareketiBilgileri = ref<Array<IEnvanterHareketiUrun & {
+  islem_tipi: EnvanteHareketiIslemTipi,
+  created_at: string,
+  satis_id: number | null
+}>>([]);
 
 const barkodAyar = reactive({
   adet: 5,
@@ -282,6 +307,32 @@ const barkodAyar = reactive({
   yaziOlsunMu: true
 });
 const barkodOlusturucu = ref<BarkodOlusturucu | null>(null);
+
+const selectedItem=ref<(IEnvanterHareketiUrun & {
+  islem_tipi: EnvanteHareketiIslemTipi,
+  created_at: string,
+  satis_id: number | null
+}) | null>(null);
+const dialogVisible = ref(false);
+
+// @ts-ignore
+const detay = (event: Event, row: any) => {
+  const item: IEnvanterHareketiUrun & {
+    islem_tipi: EnvanteHareketiIslemTipi,
+    created_at: string,
+    satis_id: number | null
+  } = row.item;
+  selectedItem.value = item;
+  dialogVisible.value = true;
+}
+
+const currentComponent = computed(() => {
+  if (selectedItem.value?.satis_id) {
+    return SatisDetay;
+  } else {
+    return EnvanterHareketiGecmisDetay;
+  }
+});
 
 const onizleInit = async (data: string, type: string) => {
   // ayarlardacustom barkod yazısı var mı kontrol et
@@ -339,6 +390,7 @@ const load = async () => {
   if (urunDuzenle.value?.barkodlar) {
     urunDuzenle.value.barkodlar.forEach((barkod: any) => barkod.isDeleted = false);
   }
+  urunHareketiBilgileri.value = await inventoryService.urunSatisBilgileri(id);
 }
 
 const indirimOrani = (urun: any) => {
@@ -418,32 +470,6 @@ const createCustomBarcode = () => {
     isDeleted: false
   });
 };
-
-// *********
-
-// mock data
-const items = ref([
-  {
-    created_at: "2025-04-23T08:18:44.377Z",
-    adet: 4,
-    tutar: 86
-  },
-  {
-    created_at: "2025-03-21T08:18:44.377Z",
-    adet: 12,
-    tutar: 806
-  },
-  {
-    created_at: "2025-03-05T08:18:44.377Z",
-    adet: 1,
-    tutar: 22
-  },
-  {
-    created_at: "2025-02-19T08:18:44.377Z",
-    adet: 1,
-    tutar: 22
-  }
-]);
 </script>
 
 <style scoped>
