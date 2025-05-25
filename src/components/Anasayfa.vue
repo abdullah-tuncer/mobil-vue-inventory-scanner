@@ -1,8 +1,8 @@
 <template>
   <v-row class="ma-auto">
-    <v-col cols="12" align="end">
+    <v-col cols="12" align="end" class="py-0">
       <v-tooltip
-          text="Ayarlar>Anasayfa Ayarları üzerinden bu sayfayı doldurabilirsiniz."
+          text="Ayarlar>Anasayfa Ayarları üzerinden bu sayfayı düzenleyebilirsiniz."
           location="bottom"
           open-on-click
       >
@@ -28,6 +28,19 @@
         </v-list-item>
       </v-list>
     </v-col>
+    <v-btn
+        @click="urunTara"
+        icon="mdi-scan-helper"
+        size="large"
+        variant="tonal"
+        :style="{
+          position: 'fixed',
+          bottom: '76px',
+          left: '50%',
+      transform: 'translateX(-50%)',
+          zIndex: 5
+        }"
+    />
   </v-row>
   <v-snackbar
       v-model="snackbar"
@@ -45,9 +58,14 @@ import {useStore} from "vuex";
 import {computed, ref} from "vue";
 import {Clipboard} from '@capacitor/clipboard';
 import {Share} from "@capacitor/share";
+import barkodTaramaService from "../services/BarkodTaramaService.ts";
+import inventoryService from "../services/inventoryService.ts";
+import {useRouter} from "vue-router";
+import {toast} from "vue3-toastify";
 
 const store = useStore();
 const snackbar = ref(false);
+const router = useRouter();
 
 const firma_ad = computed(() => store.getters["settings/getAyarByKey"]("sirket_adi"))
 const firma_aciklama = computed(() => store.getters["settings/getAyarByKey"]("sirket_aciklama"))
@@ -64,6 +82,21 @@ const paylas = async (str: string) => {
   await Share.share({
     text: str
   });
+}
+
+const urunTara = async () => {
+  try {
+    const barkod = await barkodTaramaService.scanBarcode();
+    if (barkod) {
+      const urun = await inventoryService.getUrunByBarkod(barkod.data);
+      if (urun)
+        await router.push("/urun/"+urun.id);
+      else
+        toast.warning('Ürün Bulunamadı.');
+    }
+  } catch (e: any) {
+    toast.error(e.message);
+  }
 }
 </script>
 

@@ -6,11 +6,12 @@ import inventoryService from "./services/inventoryService.ts";
 import initVuetify from "./plugins/vuetify";
 import 'vue3-toastify/dist/index.css';
 import Vue3Toastify, {type ToastContainerOptions} from 'vue3-toastify';
+import {SplashScreen} from "@capacitor/splash-screen";
 
 const app = createApp(App).use(router).use(store);
 
 inventoryService.initializeDatabase().then(() => {
-    store.dispatch("settings/loadAllSettings").then(() => {
+    store.dispatch("settings/loadAllSettings").then(async () => {
         let data = store.getters["settings/getSistemAyarlari"];
         const theme = data.find((v: any) => v.anahtar == "tema")?.deger ?? "dark";
         const settings = {
@@ -25,5 +26,6 @@ inventoryService.initializeDatabase().then(() => {
             transition: "slide"
         } as ToastContainerOptions);
         app.mount('#app');
+        await SplashScreen.hide();
     });
 })

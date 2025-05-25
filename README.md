@@ -5,3 +5,11 @@ This template should help get you started developing with Vue 3 and TypeScript i
 Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
 
 npx cap run android -l --external
+
+## Kurulum
+```
+npm install
+npx cap add android
+npx capacitor-assets generate
+npm run build:sync
+```

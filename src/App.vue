@@ -17,19 +17,19 @@
       </div>
     </v-main>
     <v-bottom-navigation v-show="!isScanning" v-model="activeTab" color="teal" grow>
-      <v-btn @click="router.push('/ayarlar')">
+      <v-btn @click="router.push('/ayarlar')" :value="NavLocation.AYARLAR">
         <v-icon>mdi-cog</v-icon>
         Ayarlar
       </v-btn>
-      <v-btn @click="router.push('/envanter')">
+      <v-btn @click="router.push('/envanter')" :value="NavLocation.ENVANTER">
         <v-icon>mdi-store</v-icon>
         Envanter
       </v-btn>
-      <v-btn @click="router.push('/')">
+      <v-btn @click="router.push('/')" :value="NavLocation.ANASAYFA">
         <v-icon>mdi-home</v-icon>
         Anasayfa
       </v-btn>
-      <v-btn @click="router.push('/satis')">
+      <v-btn @click="router.push('/satis')" :value="NavLocation.SATIS">
         <v-icon>mdi-basket</v-icon>
         Satış
       </v-btn>
@@ -42,25 +42,22 @@ import {computed, ref, watch} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
 import {useStore} from "vuex";
 import barkodTaramaService from "./services/BarkodTaramaService";
+import {NavLocation} from "./router";
 
 const router = useRouter();
 const route = useRoute();
 const store = useStore();
 const theme = computed(() => store.getters['settings/getAyarByKey']("tema"));
-const activeTab = ref(2);
+const activeTab = ref(NavLocation.ANASAYFA);
 const isScanning = computed(() => store.getters['scanner/isScanning']);
 
-// Taramayı durdur fonksiyonu
 const stopScanning = async () => {
   await barkodTaramaService.stopContinuousScan();
   store.dispatch('scanner/stopScanning');
 };
 
-watch(() => route.path, (newPath) => {
-  if (newPath === '/ayarlar') activeTab.value = 0;
-  else if (newPath === '/envanter') activeTab.value = 1;
-  else if (newPath === '/') activeTab.value = 2;
-  else if (newPath === '/satis') activeTab.value = 3;
+watch(() => route.meta.navLocation, (newNavLocation) => {
+  activeTab.value = newNavLocation as NavLocation;
 });
 </script>
 
