@@ -31,22 +31,16 @@
     <v-btn
         @click="urunTara"
         icon="mdi-scan-helper"
-        size="large"
+        class="tarayici-btn"
         variant="tonal"
-        :style="{
-          position: 'fixed',
-          bottom: '76px',
-          left: '50%',
-      transform: 'translateX(-50%)',
-          zIndex: 5
-        }"
+        size="large"
     />
   </v-row>
   <v-snackbar
       v-model="snackbar"
       :timeout="2000"
-      color="green"
       rounded="pill"
+      color="green"
   >
     <v-icon size="small">mdi-check-circle-outline</v-icon>
     İçerik panoya kopyalandı
@@ -64,8 +58,8 @@ import {useRouter} from "vue-router";
 import {toast} from "vue3-toastify";
 
 const store = useStore();
-const snackbar = ref(false);
 const router = useRouter();
+const snackbar = ref(false);
 
 const firma_ad = computed(() => store.getters["settings/getAyarByKey"]("sirket_adi"))
 const firma_aciklama = computed(() => store.getters["settings/getAyarByKey"]("sirket_aciklama"))
@@ -90,7 +84,7 @@ const urunTara = async () => {
     if (barkod) {
       const urun = await inventoryService.getUrunByBarkod(barkod.data);
       if (urun)
-        await router.push("/urun/"+urun.id);
+        await router.push("/urun/" + urun.id);
       else
         toast.warning('Ürün Bulunamadı.');
     }
@@ -101,11 +95,18 @@ const urunTara = async () => {
 </script>
 
 <style scoped>
-
 .no-ellipsis {
   white-space: normal !important;
   overflow: visible !important;
   text-overflow: clip !important;
   word-break: break-word;
+}
+
+.tarayici-btn {
+  position: fixed;
+  bottom: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
 }
 </style>

@@ -32,9 +32,9 @@
           <v-list>
             <v-list-item
                 v-for="(item, index) in envanterHareketi?.urunler"
+                @click="router.push('/urun/' + item.urun_id)"
                 :key="index"
                 class="px-0"
-                @click="router.push('/urun/' + item.urun_id)"
             >
               <v-list-item-title class="text-wrap">{{ item?.urun?.ad }}</v-list-item-title>
               <template v-slot:append>
@@ -99,14 +99,10 @@ import {
 } from "../types/inventory.ts";
 import Helper from "../services/Helper.ts";
 
-const envanterHareketi = ref<IEnvanterHareketi>();
 const route = useRoute();
 const router = useRouter();
 const props = defineProps<{ hareketId?: number | string, hideBackButton?: boolean }>();
-
-onMounted(async () => {
-  await load();
-})
+const envanterHareketi = ref<IEnvanterHareketi>();
 
 const title = computed(() => {
   if (envanterHareketi.value) {
@@ -125,6 +121,10 @@ const tarih = computed(() => {
 const islemTipi = computed(() => {
   return (envanterHareketi.value as IEnvanterHareketi)?.islem_tipi;
 })
+
+onMounted(async () => {
+  await load();
+});
 
 const load = async () => {
   try {

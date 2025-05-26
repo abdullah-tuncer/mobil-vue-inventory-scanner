@@ -33,7 +33,7 @@
         <v-card-title class="pb-0 d-flex align-center">
           <span>Sepet</span>
           <v-spacer/>
-          <v-chip color="primary" variant="outlined" v-if="satis.urunler.length > 0">
+          <v-chip v-if="satis.urunler.length > 0" color="primary" variant="outlined">
             {{ satis.urunler.length }} Ürün
           </v-chip>
         </v-card-title>
@@ -54,9 +54,9 @@
                     @update:modelValue="onAdetChange(item)"
                     :min="0"
                     style="zoom: 0.75"
-                    width="150"
                     control-variant="split"
                     density="compact"
+                    width="150"
                     hide-details
                 />
               </template>
@@ -162,19 +162,15 @@ const araToplam = computed(() => {
   return total.toFixed(2);
 });
 
-const indirimUygula = (oran: number) => {
-  if (oran == 0)
-    satis.value.ekstra_indirim_tutari = 0;
-  else {
-    let total = 0;
-    for (const item of satis.value.urunler) {
-      const fiyat = item.indirimli_birim_fiyat || item.birim_fiyat;
-      total += fiyat * item.adet;
-    }
-    total.toFixed(2);
-    satis.value.ekstra_indirim_tutari = Number((Number(toplam.value) * (oran / 100)).toFixed(2));
+const toplam = computed(() => {
+  let total = 0;
+  for (const item of satis.value.urunler) {
+    const fiyat = item.indirimli_birim_fiyat || item.birim_fiyat;
+    total += fiyat * item.adet;
   }
-}
+  total -= satis.value.ekstra_indirim_tutari;
+  return total.toFixed(2);
+});
 
 const addList = () => {
   if (urun.value) {
@@ -192,15 +188,6 @@ const addList = () => {
       });
     }
     urun.value = undefined;
-  }
-}
-
-const onAdetChange = (item: ISatisUrunu) => {
-  if (item.adet <= 0) {
-    const index = satis.value.urunler.findIndex(u => (u.urun as IUrun).id === (item.urun as IUrun).id);
-    if (index !== -1) {
-      satis.value.urunler.splice(index, 1);
-    }
   }
 }
 
@@ -240,11 +227,31 @@ const cokluTarama = async () => {
   }
 }
 
-onUnmounted(() => {
-  if (BarkodTaramaService.isScanningActive()) {
-    BarkodTaramaService.stopContinuousScan();
+const onAdetChange = (item: ISatisUrunu) => {
+  if (item.adet <= 0) {
+    const index = satis.value.urunler.findIndex(u => (u.urun as IUrun).id === (item.urun as IUrun).id);
+    if (index !== -1)
+      satis.value.urunler.splice(index, 1);
   }
-})
+}
+
+const indirimUygula = (oran: number) => {
+  if (oran == 0)
+    satis.value.ekstra_indirim_tutari = 0;
+  else {
+    let total = 0;
+    for (const item of satis.value.urunler) {
+      const fiyat = item.indirimli_birim_fiyat || item.birim_fiyat;
+      total += fiyat * item.adet;
+    }
+    total.toFixed(2);
+    satis.value.ekstra_indirim_tutari = Number((Number(toplam.value) * (oran / 100)).toFixed(2));
+  }
+}
+
+const sifirla = () => {
+  satis.value = new Satis();
+}
 
 const kaydet = async () => {
   try {
@@ -293,18 +300,10 @@ const kaydet = async () => {
   }
 }
 
-const sifirla = () => {
-  satis.value = new Satis();
-}
-
-const toplam = computed(() => {
-  let total = 0;
-  for (const item of satis.value.urunler) {
-    const fiyat = item.indirimli_birim_fiyat || item.birim_fiyat;
-    total += fiyat * item.adet;
+onUnmounted(() => {
+  if (BarkodTaramaService.isScanningActive()) {
+    BarkodTaramaService.stopContinuousScan();
   }
-  total -= satis.value.ekstra_indirim_tutari;
-  return total.toFixed(2);
 })
 </script>
 

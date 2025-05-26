@@ -9,9 +9,9 @@
     <v-col cols="12">
       <v-card>
         <v-data-table
+            @click:row="detay"
             :items="items"
             :headers="headers"
-            @click:row="detay"
         >
           <template #[`item.tip`]="{item}">
             <v-chip
@@ -44,7 +44,6 @@ import Helper from "../services/Helper.ts";
 const router = useRouter();
 
 const items = ref<Array<IEnvanterHareketi>>([]);
-
 const headers = [
   {title: "Tarih", value: "created_at", key: "tarih"},
   {title: "Tip", value: "islem_tipi", key: "tip"},

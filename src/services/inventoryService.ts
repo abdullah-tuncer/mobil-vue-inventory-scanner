@@ -1,6 +1,6 @@
 import {SQLiteDBConnection} from "@capacitor-community/sqlite";
-import SQLiteService from "./sqliteService.ts";
-import type {ISQLiteService} from "./sqliteService.ts";
+import SQLiteService from "./SqliteService.ts";
+import type {ISQLiteService} from "./SqliteService.ts";
 import {
     EnvanteHareketiIslemTipi,
     type IAyar,

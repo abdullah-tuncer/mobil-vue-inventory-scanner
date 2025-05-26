@@ -82,8 +82,16 @@ import {
 
 const route = useRoute();
 const router = useRouter();
+const props = defineProps<{ satisId?: string | number, hideBackButton?: boolean }>();
+
 const satis = ref();
-const props = defineProps<{ satisId?: string | number, hideBackButton?: boolean }>()
+
+const tarih = computed(() => {
+  if (satis.value) {
+    return Helper.dateFormat(satis.value.created_at as string)
+  } else
+    return "Bilinmeyen";
+});
 
 onMounted(async () => {
   await load();
@@ -93,13 +101,6 @@ const load = async () => {
   const id = props.satisId?.toString() || (route.params.id as string);
   satis.value = await inventoryService.getItemById(Tables.SATISLAR, id);
 }
-
-const tarih = computed(() => {
-  if (satis.value) {
-    return Helper.dateFormat(satis.value.created_at as string)
-  } else
-    return "Bilinmeyen";
-})
 
 const calculateItemTotal = (item:any) => {
   const price = item.indirimli_birim_fiyat || item.birim_fiyat;

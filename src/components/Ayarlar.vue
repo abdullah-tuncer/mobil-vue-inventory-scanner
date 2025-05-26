@@ -36,18 +36,18 @@
             </template>
           </v-list-item>
         </v-list>
+
         <v-divider/>
+
         <v-list>
           <v-list-subheader>
             <h2>Anasayfa Ayarları</h2>
           </v-list-subheader>
           <v-list-item>
-            <v-text-field v-model="sirketAdi" label="Şirket Adı" hide-details class="mt-2">
-            </v-text-field>
+            <v-text-field v-model="sirketAdi" label="Şirket Adı" class="mt-2" hide-details/>
           </v-list-item>
           <v-list-item>
-            <v-textarea v-model="sirketAciklama" label="Şirket Açıklama" hide-details class="mt-2">
-            </v-textarea>
+            <v-textarea v-model="sirketAciklama" label="Şirket Açıklama" class="mt-2" hide-details/>
           </v-list-item>
           <v-list-item>
             <v-list class="border rounded">
@@ -57,14 +57,14 @@
               <v-list-item>
                 <v-text-field
                     v-model="yeniListeItem"
+                    :disabled="onFlyList"
+                    placeholder="Örneğin: IBAN, Tel, Adres..."
                     label="Ekle"
                     class="my-2"
-                    placeholder="Örneğin: IBAN, Tel, Adres..."
                     hide-details
-                    :disabled="onFlyList"
                 >
                   <template #append-inner>
-                    <v-btn icon="mdi-plus" @click="addListItem" variant="text" :disabled="onFlyList"/>
+                    <v-btn @click="addListItem" :disabled="onFlyList" icon="mdi-plus" variant="text"/>
                   </template>
                 </v-text-field>
               </v-list-item>
@@ -74,20 +74,22 @@
                   {{ item }}
                 </v-list-item-subtitle>
                 <template #append>
-                  <v-btn icon="mdi-close" @click="removeListItem(index)" variant="text" :disabled="onFlyList"/>
+                  <v-btn @click="removeListItem(index)" :disabled="onFlyList" icon="mdi-close" variant="text"/>
                 </template>
               </v-list-item>
             </v-list>
           </v-list-item>
         </v-list>
+
         <v-divider/>
+
         <v-list>
           <v-list-subheader>
             <h2>Ürün Ayarları</h2>
           </v-list-subheader>
           <v-list-item>
             <v-checkbox v-model="barkodYaziAktif" label="Barkod yazısını özelleştir" class="pb-0" hide-details/>
-            <v-text-field v-model="barkodYazi" label="Özelleştirilmiş yazı" :disabled="!barkodYaziAktif"/>
+            <v-text-field v-model="barkodYazi" :disabled="!barkodYaziAktif" label="Özelleştirilmiş yazı"/>
           </v-list-item>
           <v-list-item>
             <v-list-item-title>İndirim Uygulama Butonları</v-list-item-title>

@@ -1,5 +1,5 @@
 <template>
-  <v-select
+  <v-autocomplete
       v-model="selectedItem"
       :items="items"
       :rules="rules"
@@ -14,7 +14,7 @@
     <template v-if="$slots.append" #append>
       <slot name="append"></slot>
     </template>
-  </v-select>
+  </v-autocomplete>
 </template>
 
 <script setup lang="ts">

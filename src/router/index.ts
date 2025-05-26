@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Anasayfa from '../components/Anasayfa.vue'
 import Ayarlar from '../components/Ayarlar.vue'
-import BarkodOlusturucu from '../components/BarkodOlusturucu.vue'
 import Envanter from '../components/Envanter.vue'
 import EnvanterHareketi from '../components/EnvanterHareketi.vue'
 import Satis from '../components/Satis.vue'
@@ -33,15 +32,6 @@ const routes = [
     component: Ayarlar,
     meta: {
       navLocation: NavLocation.AYARLAR
-    }
-  },
-  //   kontrol edilecek
-  {
-    path: '/barkod-olusturucu',
-    name: 'BarkodOlusturucu',
-    component: BarkodOlusturucu,
-    meta: {
-      navLocation: NavLocation.ENVANTER
     }
   },
   {

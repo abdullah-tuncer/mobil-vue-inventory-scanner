@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Arka plan daire -->
+  <circle cx="256" cy="256" r="256" fill="#41B883"/>
+  
+  <!-- Kutu/envanter sembolü -->
+  <path d="M128 176v192h256V176H128z" fill="#FFFFFF"/>
+  
+  <!-- Kutu üst kapağı -->
+  <path d="M128 176l64-32h128l64 32H128z" fill="#35495E"/>
+  
+  <!-- Barkod -->
+  <rect x="160" y="208" width="16" height="128" fill="#35495E"/>
+  <rect x="184" y="208" width="8" height="128" fill="#35495E"/>
+  <rect x="200" y="208" width="24" height="128" fill="#35495E"/>
+  <rect x="232" y="208" width="16" height="128" fill="#35495E"/>
+  <rect x="256" y="208" width="8" height="128" fill="#35495E"/>
+  <rect x="272" y="208" width="24" height="128" fill="#35495E"/>
+  <rect x="304" y="208" width="8" height="128" fill="#35495E"/>
+  <rect x="320" y="208" width="16" height="128" fill="#35495E"/>
+  <rect x="344" y="208" width="8" height="128" fill="#35495E"/>
+</svg>

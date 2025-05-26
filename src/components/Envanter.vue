@@ -11,16 +11,17 @@
         </v-tabs>
         <v-tabs-window v-model="tab">
           <v-tabs-window-item value="envanter">
+<!--            TODO: Filtre eklenecek-->
             <v-data-table
+                @click:row="envanterUrunDetay"
                 :headers="envanterHeaders"
                 :items="envanterItems"
-                @click:row="envanterUrunDetay"
             >
               <template #top>
                 <v-btn
                     @click="router.push('/envanter-hareketi')"
-                    rounded="xs"
                     prepend-icon="mdi-plus-minus-variant"
+                    rounded="xs"
                     class="my-2"
                     block
                 >
@@ -40,10 +41,11 @@
             </v-btn>
           </v-tabs-window-item>
           <v-tabs-window-item value="urunler">
+<!--            TODO: Filtre eklenecek-->
             <v-data-table
+                @click:row="urunDetay"
                 :headers="urunlerHeaders"
                 :items="urunlerItems"
-                @click:row="urunDetay"
             >
               <template #top>
                 <v-btn @click="router.push('urun-ekle')" block class="my-2" rounded="xs" prepend-icon="mdi-plus">
@@ -78,19 +80,18 @@ const router = useRouter();
 const route = useRoute();
 
 const tab = ref<"envanter" | "urunler">('envanter');
+
 const envanterHeaders = ref([
   {title: "Ad", value: "urun.ad", key: "ad"},
   {title: "Adet", value: "adet", key: "adet", align: "end" as const}
 ]);
-
 const envanterItems = ref<Array<IEnvanter>>([]);
 
 const urunlerHeaders = ref([
   {title: "#", value: "id", key: "id", width: 64},
   {title: "Ad", value: "ad", key: "ad"},
   {title: "Fiyat", value: "fiyat", key: "fiyat", align: "end" as const}
-])
-
+]);
 const urunlerItems = ref<Array<IUrun>>([]);
 
 onMounted(() => {

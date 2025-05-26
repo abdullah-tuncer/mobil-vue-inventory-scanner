@@ -40,8 +40,8 @@
             <v-btn
                 @click="addBarcode"
                 prepend-icon="mdi-barcode-scan"
-                rounded="1"
                 variant="outlined"
+                rounded="1"
                 block
             >
               Barkod Ekle
@@ -87,11 +87,11 @@ import {useStore} from "vuex";
 import barkodTaramaService from "../services/BarkodTaramaService.ts";
 import {toast} from "vue3-toastify";
 
+const router = useRouter();
+const store = useStore();
 const form = ref();
 const item = ref(new Urun());
 const barkodlar = ref<Array<any>>([]);
-const router = useRouter();
-const store = useStore();
 
 const indirimOranlari = computed(() => [
   Number(store.getters["settings/getAyarByKey"]("indirim_oran_1")),
@@ -104,6 +104,20 @@ const indirimUygula = (oran: number) => {
     item.value.indirimli_fiyat = undefined;
   else
     item.value.indirimli_fiyat = item.value.fiyat - (item.value.fiyat * (oran / 100));
+}
+
+const addBarcode = async () => {
+  try {
+    const barkod = await barkodTaramaService.scanBarcode();
+    if (barkod)
+      barkodlar.value.push(barkod);
+  } catch (e: any) {
+    toast.error(e.message);
+  }
+}
+
+const removeBarcode = (index: number) => {
+  barkodlar.value.splice(index, 1);
 }
 
 const save = async () => {
@@ -120,20 +134,6 @@ const save = async () => {
       console.error("Error - UrunEkle.vue - save():", e);
     }
   }
-}
-
-const addBarcode = async () => {
-  try {
-    const barkod = await barkodTaramaService.scanBarcode();
-    if (barkod)
-      barkodlar.value.push(barkod);
-  } catch (e: any) {
-    toast.error(e.message);
-  }
-}
-
-const removeBarcode = (index: number) => {
-  barkodlar.value.splice(index, 1);
 }
 </script>
 

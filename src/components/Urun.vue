@@ -3,7 +3,7 @@
     <v-col cols="10" class="py-0">
       <h2>
         <v-btn @click="router.back()" variant="text" icon="mdi-arrow-left" class="mt-n1 ml-n4"/>
-        {{ urun.ad }}
+        {{ urun?.ad }}
       </h2>
     </v-col>
     <v-col align="right" cols="2" class="py-0">
@@ -11,16 +11,6 @@
     </v-col>
     <v-col cols="12">
       <v-card v-if="duzenleAktif">
-        <v-card-actions>
-          <v-row>
-            <v-col cols="6">
-              <v-btn @click="cancel" color="secondary" block>Vazgeç</v-btn>
-            </v-col>
-            <v-col cols="6">
-              <v-btn @click="save" color="primary" block>Kaydet</v-btn>
-            </v-col>
-          </v-row>
-        </v-card-actions>
         <v-row class="ma-auto">
           <v-col cols="12">
             <v-text-field
@@ -100,24 +90,34 @@
             </v-card>
           </v-col>
         </v-row>
+        <v-card-actions>
+          <v-row>
+            <v-col cols="6">
+              <v-btn @click="cancel" color="secondary" block>Vazgeç</v-btn>
+            </v-col>
+            <v-col cols="6">
+              <v-btn @click="save" color="primary" block>Kaydet</v-btn>
+            </v-col>
+          </v-row>
+        </v-card-actions>
       </v-card>
       <v-card v-else>
         <v-row class="ma-auto">
           <v-col cols="12">
             <v-label>Ad:</v-label>
-            {{ urun.ad }}
+            {{ urun?.ad }}
           </v-col>
           <v-col cols="12">
             <v-label>Açıklama:</v-label>
             <br>
-            {{ urun.aciklama }}
+            {{ urun?.aciklama }}
           </v-col>
           <v-col cols="12">
             <v-card variant="outlined" color="secondary" align="center">
               <v-card-title class="pt-0">Fiyat</v-card-title>
               <v-divider/>
               <v-card-text>
-                <v-row v-if="urun.indirimli_fiyat">
+                <v-row v-if="urun?.indirimli_fiyat">
                   <v-col cols="4">
                     <v-row>
                       <v-col align-self="center" cols="12" class="border-e border-b">
@@ -139,7 +139,7 @@
                 </v-row>
                 <v-row v-else>
                   <v-col align-self="center" cols="12">
-                    <h1>{{ urun.fiyat }}₺</h1>
+                    <h1>{{ urun?.fiyat }}₺</h1>
                   </v-col>
                 </v-row>
               </v-card-text>
@@ -150,7 +150,7 @@
               <v-card-title class="pt-0" align="center">Barkodlar</v-card-title>
               <v-divider/>
               <v-list>
-                <v-list-item v-if="urun.barkodlar.length>0" v-for="barkod in urun.barkodlar">
+                <v-list-item v-if="urun?.barkodlar.length>0" v-for="barkod in urun.barkodlar">
                   <v-list-item-title>
                     {{ barkod.data }}
                   </v-list-item-title>
@@ -158,6 +158,7 @@
                     {{ barkod.type }}
                   </v-list-item-subtitle>
                   <template #append>
+                    <!--TODO: Modül yapılabilir-->
                     <v-dialog @update:model-value="val => val && onizleInit(barkod.data, barkod.type)">
                       <template #activator="{props}">
                         <v-icon v-bind="props">mdi-printer</v-icon>
@@ -175,8 +176,8 @@
                                 v-model="barkodAyar.boyut"
                                 @change="onizleInit(barkod.data, barkod.type)"
                                 class="py-0"
-                                inline
                                 hide-details
+                                inline
                             >
                               <v-radio label="Küçük" value="small"/>
                               <v-radio label="Normal" value="normal"/>
@@ -192,22 +193,22 @@
                             />
                           </v-col>
                           <v-col cols="12" class="py-0">
-                            <v-number-input v-model="barkodAyar.adet" label="Barkod Adeti" :min="1" hide-details/>
+                            <v-number-input v-model="barkodAyar.adet" :min="1" label="Barkod Adeti" hide-details/>
                           </v-col>
                           <v-col cols="12">
                             <v-btn
+                                @click="cokluBarkodIndir()"
                                 color="primary"
                                 block
-                                @click="cokluBarkodIndir()"
                             >
                               {{ barkodAyar.adet }} Adet Barkod İndir
                             </v-btn>
                           </v-col>
                           <v-col cols="12">
                             <v-btn
+                                @click="sayfayaSigacakBarkodIndir()"
                                 color="success"
                                 block
-                                @click="sayfayaSigacakBarkodIndir()"
                             >
                               Sayfaya Sığacak Kadar Barkod İndir
                             </v-btn>
@@ -228,9 +229,9 @@
 
           <v-col cols="12">
             <v-data-table
+                @click:row="detay"
                 :headers="headers"
                 :items="urunHareketiBilgileri"
-                @click:row="detay"
             >
               <template #[`item.tarih`]="{item}">
                 {{ Helper.dateFormat(item.created_at) }}
@@ -246,15 +247,16 @@
             </v-data-table>
           </v-col>
 
+          <!-- İşlem Detay Dialog -->
           <v-dialog v-model="dialogVisible">
             <v-card>
-                <component
-                    class="mt-2"
+              <component
                   :is="currentComponent"
                   :satis-id="selectedItem?.satis_id"
                   :hareket-id="selectedItem?.id"
+                  class="mt-2"
                   hide-back-button
-                />
+              />
               <v-card-actions>
                 <v-btn @click="dialogVisible=false" color="secondary">Kapat</v-btn>
               </v-card-actions>
