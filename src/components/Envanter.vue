@@ -11,13 +11,25 @@
         </v-tabs>
         <v-tabs-window v-model="tab">
           <v-tabs-window-item value="envanter">
-<!--            TODO: Filtre eklenecek-->
             <v-data-table
                 @click:row="envanterUrunDetay"
                 :headers="envanterHeaders"
                 :items="envanterItems"
+                :search="search"
             >
               <template #top>
+                <v-text-field
+                    v-model="search"
+                    prepend-inner-icon="mdi-magnify"
+                    variant="solo-filled"
+                    density="compact"
+                    class="my-2"
+                    label="Ara"
+                    hide-details
+                    single-line
+                    clearable
+                    flat
+                />
                 <v-btn
                     @click="router.push('/envanter-hareketi')"
                     prepend-icon="mdi-plus-minus-variant"
@@ -41,13 +53,25 @@
             </v-btn>
           </v-tabs-window-item>
           <v-tabs-window-item value="urunler">
-<!--            TODO: Filtre eklenecek-->
             <v-data-table
                 @click:row="urunDetay"
                 :headers="urunlerHeaders"
                 :items="urunlerItems"
+                :search="search"
             >
               <template #top>
+                <v-text-field
+                    v-model="search"
+                    prepend-inner-icon="mdi-magnify"
+                    variant="solo-filled"
+                    density="compact"
+                    class="my-2"
+                    label="Ara"
+                    hide-details
+                    single-line
+                    clearable
+                    flat
+                />
                 <v-btn @click="router.push('urun-ekle')" block class="my-2" rounded="xs" prepend-icon="mdi-plus">
                   Ekle
                 </v-btn>
@@ -86,6 +110,7 @@ const envanterHeaders = ref([
   {title: "Adet", value: "adet", key: "adet", align: "end" as const}
 ]);
 const envanterItems = ref<Array<IEnvanter>>([]);
+const search = ref("")
 
 const urunlerHeaders = ref([
   {title: "#", value: "id", key: "id", width: 64},
