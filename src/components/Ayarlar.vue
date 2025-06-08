@@ -105,6 +105,49 @@
               </v-col>
             </v-row>
           </v-list-item>
+          <v-dialog @update:model-value="v => v && loadSilinenUrunler()">
+            <template #activator="{props}">
+              <v-list-item v-bind="props" prepend-icon="mdi-delete">
+                <v-list-item-title>Geri Dönüşüm Kutusu</v-list-item-title>
+              </v-list-item>
+            </template>
+            <template #default="{isActive}">
+              <v-card title="Geri Dönüşüm Kutusu">
+                <v-card-subtitle class="no-ellipsis">
+                  Silinen ürünler buradan geri alınabilir. Geri alma işleminden sonra Envanter > Ürünler kısmından kontrol edilebilir.
+                </v-card-subtitle>
+                <v-card-text>
+                  <v-data-table
+                      :headers="silinenUrunlerHeaders"
+                      :items="silinenUrunler"
+                      :search="search"
+                  >
+                    <template #top>
+                      <v-text-field
+                          v-model="search"
+                          prepend-inner-icon="mdi-magnify"
+                          variant="solo-filled"
+                          density="compact"
+                          class="my-2"
+                          label="Ara"
+                          hide-details
+                          single-line
+                          clearable
+                          flat
+                      />
+                    </template>
+                    <template #[`item.islem`]="{item}">
+                      <v-btn @click="urunGeriAl(item)" variant="text" icon="mdi-undo-variant" color="yellow"/>
+                    </template>
+                  </v-data-table>
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer/>
+                  <v-btn @click="isActive.value=false" color="secondary">Kapat</v-btn>
+                </v-card-actions>
+              </v-card>
+            </template>
+          </v-dialog>
         </v-list>
       </v-card>
     </v-col>
@@ -114,8 +157,17 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue';
 import {useStore} from 'vuex';
+import type {IUrun} from "../types/inventory.ts";
+import inventoryService from "../services/inventoryService.ts";
 
 const store = useStore();
+
+const search = ref("");
+const silinenUrunler = ref<Array<IUrun>>([]);
+const silinenUrunlerHeaders = [
+  {title: "Ürün", value: "ad"},
+  {title: "İşlem", key: "islem", sortable: false, width: 60, align: "center" as const}
+];
 
 const tema = computed({
   get: () => store.getters['settings/getAyarByKey']('tema') === 'dark',
@@ -223,8 +275,22 @@ const removeListItem = async (index: number) => {
     onFlyList.value = false;
   }
 };
+
+const loadSilinenUrunler = async () => {
+  silinenUrunler.value = await inventoryService.deletedUrunler();
+}
+
+const urunGeriAl = async (item: IUrun) => {
+  await inventoryService.restoreUrun(item.id);
+  await loadSilinenUrunler();
+}
 </script>
 
 <style scoped>
-
+.no-ellipsis {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word;
+}
 </style>

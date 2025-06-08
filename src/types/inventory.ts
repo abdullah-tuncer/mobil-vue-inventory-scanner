@@ -17,6 +17,7 @@ export interface IUrun {
     barkodlar?: Array<IBarkod>;
     created_at: string;
     updated_at?: string;
+    is_deleted?: number;
 }
 
 export interface IBarkod {

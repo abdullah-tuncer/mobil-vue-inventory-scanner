@@ -85,6 +85,30 @@
                 </span>
                 <span v-else>{{ item.fiyat + " ₺" }}</span>
               </template>
+              <template #[`item.delete`]="{item}">
+                <v-dialog v-model="dialog">
+                  <template #activator="{props}">
+                    <v-btn v-bind="props" icon="mdi-delete" size="small" variant="text" color="red"/>
+                  </template>
+                  <template #default>
+                    <v-card title="Ürünü Sil">
+                      <v-card-text>
+                        Ürüne bağlı işlem kaydı yok ise ürün kalıcı olarak silinecektir.
+                        Eğer işlem kaydı var ise Ayarlar > Çöp Kutusu üzerinden geri alınabilir.
+                      </v-card-text>
+                      <v-card-actions>
+                        <v-spacer/>
+                        <v-btn @click="dialog = false" color="secondary">
+                          Kapat
+                        </v-btn>
+                        <v-btn @click="deleteUrun(item.id)" color="red">
+                          Sil
+                        </v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </template>
+                </v-dialog>
+              </template>
             </v-data-table>
           </v-tabs-window-item>
         </v-tabs-window>
@@ -99,23 +123,26 @@ import {onMounted, ref} from "vue";
 import inventoryService, {Tables} from "../services/inventoryService.ts";
 import type {IEnvanter, IUrun} from "../types/inventory.ts";
 import {useRoute, useRouter} from "vue-router";
+import {toast} from "vue3-toastify";
 
 const router = useRouter();
 const route = useRoute();
 
 const tab = ref<"envanter" | "urunler">('envanter');
+const dialog = ref(false);
 
 const envanterHeaders = ref([
   {title: "Ad", value: "urun.ad", key: "ad"},
   {title: "Adet", value: "adet", key: "adet", align: "end" as const}
 ]);
 const envanterItems = ref<Array<IEnvanter>>([]);
-const search = ref("")
+const search = ref("");
 
 const urunlerHeaders = ref([
   {title: "#", value: "id", key: "id", width: 64},
   {title: "Ad", value: "ad", key: "ad"},
-  {title: "Fiyat", value: "fiyat", key: "fiyat", align: "end" as const}
+  {title: "Fiyat", value: "fiyat", key: "fiyat", align: "end" as const},
+  {title: "Sil", key: "delete", width: 64, sortable: false, align: "center" as const}
 ]);
 const urunlerItems = ref<Array<IUrun>>([]);
 
@@ -131,6 +158,16 @@ const load = async () => {
     urunlerItems.value = await inventoryService.getItems(Tables.URUNLER);
   } catch (e) {
     console.error("Error - Envanter.vue - load():", e);
+  }
+}
+
+const deleteUrun = async (urun_id: number) => {
+  try {
+    await inventoryService.deleteItem(Tables.URUNLER, urun_id);
+    await load();
+    dialog.value = false;
+  } catch (e: any) {
+    toast.error("Bir hata oluştu." + e.message)
   }
 }
 

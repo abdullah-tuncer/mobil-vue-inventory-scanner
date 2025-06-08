@@ -1,6 +1,6 @@
 import {SQLiteDBConnection} from "@capacitor-community/sqlite";
-import SQLiteService from "./SqliteService.ts";
 import type {ISQLiteService} from "./SqliteService.ts";
+import SQLiteService from "./SqliteService.ts";
 import {
     EnvanteHareketiIslemTipi,
     type IAyar,
@@ -18,8 +18,19 @@ interface IInventoryService {
     addItem<T extends keyof TableTypeMap>(table: T, data: TableTypeMap[T]): Promise<number>;
     getItems<T extends keyof TableTypeMap>(table: T, fields?: Array<string>): Promise<Array<TableTypeMap[T]>>;
     getItemById<T extends keyof TableTypeMap>(table: T, id: number): Promise<TableTypeMap[T] | null>;
+    urunSatisBilgileri(urun_id: number | string): Promise<Array<IEnvanterHareketiUrun & {
+        islem_tipi: EnvanteHareketiIslemTipi,
+        created_at: string,
+        satis_id: number | null
+    }>>;
     updateItem<T extends keyof TableTypeMap>(table: T, data: TableTypeMap[T]): Promise<void>;
     deleteItem(table: Tables, id: number): Promise<void>;
+    deletedUrunler(): Promise<Array<IUrun>>;
+    restoreUrun(urunId: number): Promise<void>;
+    getAyarlar(grup?: string): Promise<Array<IAyar>>;
+    getAyar(anahtar: string): Promise<string | null>;
+    setAyar(anahtar: string, deger: string): Promise<void>;
+    getUrunByBarkod(barkodData: string): Promise<IUrun | null>;
 }
 
 export enum Tables {
@@ -63,7 +74,7 @@ class InventoryService implements IInventoryService {
                     {
                         toVersion: 1,
                         statements: [
-                            'CREATE TABLE IF NOT EXISTS urunler (id INTEGER PRIMARY KEY AUTOINCREMENT, ad TEXT NOT NULL, aciklama TEXT, fiyat REAL NOT NULL, indirimli_fiyat REAL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT);',
+                            'CREATE TABLE IF NOT EXISTS urunler (id INTEGER PRIMARY KEY AUTOINCREMENT, ad TEXT NOT NULL, aciklama TEXT, fiyat REAL NOT NULL, indirimli_fiyat REAL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0);',
                             'CREATE TABLE IF NOT EXISTS barkodlar (id INTEGER PRIMARY KEY AUTOINCREMENT, urun_id INTEGER NOT NULL, data TEXT NOT NULL, type TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (urun_id) REFERENCES urunler(id));',
                             'CREATE TABLE IF NOT EXISTS envanter_hareketleri (id INTEGER PRIMARY KEY AUTOINCREMENT, islem_tipi TEXT NOT NULL, aciklama TEXT, satis_id INTEGER, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (satis_id) REFERENCES satislar(id));',
                             'CREATE TABLE IF NOT EXISTS envanter (id INTEGER PRIMARY KEY AUTOINCREMENT, urun_id INTEGER NOT NULL UNIQUE, adet INTEGER NOT NULL DEFAULT 0, updated_at TEXT, FOREIGN KEY (urun_id) REFERENCES urunler(id));',
@@ -155,6 +166,8 @@ class InventoryService implements IInventoryService {
                     FROM ${table} e
                     LEFT JOIN ${Tables.URUNLER} u ON e.urun_id = u.id
                 `;
+            } else if (table == Tables.URUNLER) {
+                query += ` WHERE is_deleted = 0`;
             }
 
             if (sort)
@@ -299,11 +312,74 @@ class InventoryService implements IInventoryService {
     async deleteItem(table: Tables, id: number): Promise<void> {
         if (!this.initialized) await this.initializeDatabase();
         try {
-            const statement = `DELETE FROM ${table} WHERE id = ?`;
-            await this.db.run(statement, [id]);
+            if (table == Tables.URUNLER)
+                await this.deleteUrun(id);
+            else {
+                const statement = `DELETE FROM ${table} WHERE id = ?`;
+                await this.db.run(statement, [id]);
+            }
         } catch (error: any) {
             const msg = error.message ? error.message : error;
             throw new Error(`inventoryService.deleteItem: ${msg}`);
+        }
+    }
+
+    private async deleteUrun(urunId: number): Promise<void> {
+        if (!this.initialized) await this.initializeDatabase();
+        try {
+            const urunHareketiQuery = `SELECT * FROM ${Tables.ENVANTER_HAREKETI_URUN} WHERE urun_id = ?`;
+            const urunHareketleri = (await this.db.query(urunHareketiQuery, [urunId])).values ?? [];
+            const satisUrunQuery = `SELECT * FROM ${Tables.SATIS_URUNLERI} WHERE urun_id = ?`;
+            const satisUrunleri = (await this.db.query(satisUrunQuery, [urunId])).values ?? [];
+            // varsa soft yoksa hard delete işlemi yap
+            if (urunHareketleri.length > 0 || satisUrunleri.length > 0) {
+                const urun = await this.getItemById(Tables.ENVANTER, urunId);
+                if (urun) {
+                    const hareketId = await this.addItem(Tables.ENVANTER_HAREKETLERI, {
+                        islem_tipi: EnvanteHareketiIslemTipi.SAYIM,
+                        aciklama: "Ürün kaldırıldı."
+                    });
+                    let hareketUrun: IEnvanterHareketiUrun = {
+                        envanter_hareketi_id: hareketId,
+                        adet: urun.adet * -1,
+                        urun_id: urun.id
+                    }
+                    await this.addItem(Tables.ENVANTER_HAREKETI_URUN, hareketUrun);
+                }
+                const statement = `UPDATE ${Tables.URUNLER} SET is_deleted = 1 WHERE id = ?`;
+                await this.db.run(statement, [urunId]);
+            } else {
+                const barkodStatement = `DELETE FROM ${Tables.BARKODLAR} WHERE urun_id = ?`;
+                await this.db.run(barkodStatement, [urunId]);
+                const statement = `DELETE FROM ${Tables.URUNLER} WHERE id = ?`;
+                await this.db.run(statement, [urunId]);
+            }
+        } catch (error: any) {
+            const msg = error.message ? error.message : error;
+            throw new Error(`inventoryService.deleteUrun: ${msg}`);
+        }
+    }
+
+    async deletedUrunler(): Promise<Array<IUrun>> {
+        if (!this.initialized) await this.initializeDatabase();
+        try {
+            const query = `SELECT * FROM ${Tables.URUNLER} WHERE is_deleted = 1`;
+            const result = await this.db.query(query);
+            return result.values || [];
+        } catch (error: any) {
+            const msg = error.message ? error.message : error;
+            throw new Error(`inventoryService.deletedUrunler: ${msg}`);
+        }
+    }
+
+    async restoreUrun(urunId: number): Promise<void> {
+        if (!this.initialized) await this.initializeDatabase();
+        try {
+            const statement = `UPDATE ${Tables.URUNLER} SET is_deleted = 0 WHERE id = ?`;
+            await this.db.run(statement, [urunId]);
+        } catch (error: any) {
+            const msg = error.message ? error.message : error;
+            throw new Error(`inventoryService.restoreUrun: ${msg}`);
         }
     }
 
