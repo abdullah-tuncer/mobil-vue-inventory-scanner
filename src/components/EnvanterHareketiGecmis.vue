@@ -24,7 +24,22 @@
           <template #[`item.tarih`]="{item}">
             {{ Helper.dateFormat(item.created_at as string) }}
           </template>
+          <template #[`item.islem`]="{item}">
+            <v-btn @click.stop="selectedHareket=item; dialog = true" variant="text" icon="mdi-delete" color="red"/>
+          </template>
         </v-data-table>
+        <v-dialog v-model="dialog">
+          <v-card :title="'#' + selectedHareket.id + ' Sil'">
+            <v-card-subtitle class="no-ellipsis">
+              Envanter hareketindeki işlemler geri alınacaktır.
+            </v-card-subtitle>
+            <v-card-actions>
+              <v-spacer/>
+              <v-btn @click="dialog=false" color="secondary">Kapat</v-btn>
+              <v-btn @click="deleteHareket" color="red">Sil</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
       </v-card>
     </v-col>
   </v-row>
@@ -40,14 +55,18 @@ import {
 } from "../types/inventory.ts";
 import inventoryService, {Tables} from "../services/inventoryService.ts";
 import Helper from "../services/Helper.ts";
+import {toast} from "vue3-toastify";
 
 const router = useRouter();
 
+const dialog = ref(false);
+const selectedHareket = ref();
 const items = ref<Array<IEnvanterHareketi>>([]);
 const headers = [
   {title: "Tarih", value: "created_at", key: "tarih"},
   {title: "Tip", value: "islem_tipi", key: "tip"},
-  {title: "Açıklama", value: "aciklama", key: "aciklama"}
+  {title: "Açıklama", value: "aciklama", key: "aciklama"},
+  {title: "İşlem", key: "islem", size: 56, sortable: false, align: "center" as const}
 ]
 
 onMounted(async () => {
@@ -72,5 +91,16 @@ const detay = (event: Event, row: any) => {
     router.push('/satis-detay/' + item.satis_id);
   else
     router.push('/envanter-hareketi-gecmis-detay/' + item.id);
+}
+
+const deleteHareket = async () => {
+  try {
+    await inventoryService.deleteEnvanterHareketi(selectedHareket.value);
+    await load();
+    dialog.value = false;
+  } catch (e: any) {
+    console.error("EnvanterHareketiGecmis.vue - deleteHareket hata:", e);
+    toast.error("Bir hata oluştu: " + e.message);
+  }
 }
 </script>

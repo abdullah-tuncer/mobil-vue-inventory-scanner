@@ -285,12 +285,3 @@ const urunGeriAl = async (item: IUrun) => {
   await loadSilinenUrunler();
 }
 </script>
-
-<style scoped>
-.no-ellipsis {
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
-  word-break: break-word;
-}
-</style>

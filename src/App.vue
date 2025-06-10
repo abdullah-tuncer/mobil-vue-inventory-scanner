@@ -61,6 +61,15 @@ watch(() => route.meta.navLocation, (newNavLocation) => {
 });
 </script>
 
+<style>
+.no-ellipsis {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word;
+}
+</style>
+
 <style scoped>
 .scanner-container {
   width: 100%;

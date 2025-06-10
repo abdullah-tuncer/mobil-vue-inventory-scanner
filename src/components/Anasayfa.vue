@@ -95,13 +95,6 @@ const urunTara = async () => {
 </script>
 
 <style scoped>
-.no-ellipsis {
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
-  word-break: break-word;
-}
-
 .tarayici-btn {
   position: fixed;
   bottom: 76px;

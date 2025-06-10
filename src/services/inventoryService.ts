@@ -58,7 +58,7 @@ type TableTypeMap = {
 class InventoryService implements IInventoryService {
     private db!: SQLiteDBConnection;
     private database: string = 'inventory_db';
-    private loadToVersion: number = 2;
+    private loadToVersion: number = 3;
     private initialized: boolean = false;
 
     constructor(private sqliteService: ISQLiteService) {
@@ -115,6 +115,30 @@ class InventoryService implements IInventoryService {
                             "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_1', '10', 'urun', 'Birinci indirim oranı');",
                             "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_2', '20', 'urun', 'İkinci indirim oranı');",
                             "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_3', '30', 'urun', 'Üçüncü indirim oranı');"
+                        ]
+                    },
+                    {
+                        toVersion: 3,
+                        statements: [
+                            // Envanter hareketi silindiğinde envanter tablosunu güncelleyen trigger
+                            `CREATE TRIGGER IF NOT EXISTS update_stock_before_movement_delete
+                             BEFORE DELETE ON envanter_hareketi_urun
+                             BEGIN
+                                 -- Kayıt varsa güncelle
+                                 UPDATE envanter
+                                 SET adet = adet - OLD.adet,
+                                     updated_at = CURRENT_TIMESTAMP
+                                 WHERE urun_id = OLD.urun_id;
+                            
+                                 -- Kayıt yoksa (güncellenmediyse) yeni kayıt ekle
+                                 INSERT INTO envanter (urun_id, adet, updated_at)
+                                 SELECT OLD.urun_id, -OLD.adet, CURRENT_TIMESTAMP
+                                 WHERE (SELECT changes() = 0);
+                                
+                                 -- Adet 0 ise kaydı sil
+                                 DELETE FROM envanter 
+                                 WHERE urun_id = OLD.urun_id AND adet = 0;
+                             END;`
                         ]
                     },
                 ],
@@ -369,6 +393,35 @@ class InventoryService implements IInventoryService {
         } catch (error: any) {
             const msg = error.message ? error.message : error;
             throw new Error(`inventoryService.deletedUrunler: ${msg}`);
+        }
+    }
+
+    async deleteEnvanterHareketi(envanterHareketi: IEnvanterHareketi): Promise<void> {
+        if (!this.initialized) await this.initializeDatabase();
+        try {
+            const statements = [];
+            statements.push({
+                statement: `DELETE FROM ${Tables.ENVANTER_HAREKETI_URUN} WHERE envanter_hareketi_id = ?`,
+                values: [envanterHareketi.id]
+            });
+            statements.push({
+                statement: `DELETE FROM ${Tables.ENVANTER_HAREKETLERI} WHERE id = ?`,
+                values: [envanterHareketi.id]
+            });
+            if (envanterHareketi.satis_id) {
+                statements.push({
+                    statement: `DELETE FROM ${Tables.SATIS_URUNLERI} WHERE satis_id = ?`,
+                    values: [envanterHareketi.satis_id]
+                });
+                statements.push({
+                    statement: `DELETE FROM ${Tables.SATISLAR} WHERE id = ?`,
+                    values: [envanterHareketi.satis_id]
+                });
+            }
+            await this.db.executeTransaction(statements);
+        } catch (error: any) {
+            const msg = error.message ? error.message : error;
+            throw new Error(`inventoryService.deleteEnvanterHareketi: ${msg}`);
         }
     }
 
