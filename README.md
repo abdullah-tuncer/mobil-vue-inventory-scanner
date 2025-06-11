@@ -26,7 +26,6 @@ Barkod tarama özelliği ile envanter ve satış yönetimi yapabileceğiniz mobi
 
 ```bash
 npm install
-npx cap add android
 npx capacitor-assets generate
 npm run build:sync
 ```
