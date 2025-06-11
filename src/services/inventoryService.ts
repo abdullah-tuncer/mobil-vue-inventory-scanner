@@ -58,7 +58,7 @@ type TableTypeMap = {
 class InventoryService implements IInventoryService {
     private db!: SQLiteDBConnection;
     private database: string = 'inventory_db';
-    private loadToVersion: number = 3;
+    private loadToVersion: number = 1;
     private initialized: boolean = false;
 
     constructor(private sqliteService: ISQLiteService) {
@@ -74,7 +74,7 @@ class InventoryService implements IInventoryService {
                     {
                         toVersion: 1,
                         statements: [
-                            'CREATE TABLE IF NOT EXISTS urunler (id INTEGER PRIMARY KEY AUTOINCREMENT, ad TEXT NOT NULL, aciklama TEXT, fiyat REAL NOT NULL, indirimli_fiyat REAL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0);',
+                            'CREATE TABLE IF NOT EXISTS urunler (id INTEGER PRIMARY KEY AUTOINCREMENT, ad TEXT NOT NULL, aciklama TEXT, fiyat REAL NOT NULL, indirimli_fiyat REAL, minMaxStok INTEGER DEFAULT 0, minStok INTEGER, maxStok INTEGER, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0);',
                             'CREATE TABLE IF NOT EXISTS barkodlar (id INTEGER PRIMARY KEY AUTOINCREMENT, urun_id INTEGER NOT NULL, data TEXT NOT NULL, type TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (urun_id) REFERENCES urunler(id));',
                             'CREATE TABLE IF NOT EXISTS envanter_hareketleri (id INTEGER PRIMARY KEY AUTOINCREMENT, islem_tipi TEXT NOT NULL, aciklama TEXT, satis_id INTEGER, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (satis_id) REFERENCES satislar(id));',
                             'CREATE TABLE IF NOT EXISTS envanter (id INTEGER PRIMARY KEY AUTOINCREMENT, urun_id INTEGER NOT NULL UNIQUE, adet INTEGER NOT NULL DEFAULT 0, updated_at TEXT, FOREIGN KEY (urun_id) REFERENCES urunler(id));',
@@ -98,28 +98,7 @@ class InventoryService implements IInventoryService {
                                  -- Stok miktarı sıfır ise kaydı sil
                                  DELETE FROM envanter 
                                  WHERE urun_id = NEW.urun_id AND adet = 0;
-                             END;`
-                        ]
-                    },
-                    {
-                        toVersion: 2,
-                        statements: [
-                            'CREATE TABLE IF NOT EXISTS ayarlar (id INTEGER PRIMARY KEY AUTOINCREMENT, anahtar TEXT NOT NULL UNIQUE, deger TEXT, grup TEXT, aciklama TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT);',
-                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('tema', 'light', 'sistem', 'Uygulama teması (acik/karanlik)');",
-                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('tablo_gorunumu', 'varsayilan', 'sistem', 'Tablo görünüm modu (varsayilan/mobil)');",
-                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('sirket_adi', 'Envanter Yönetim Sistemi', 'anasayfa', 'Şirket adı');",
-                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('sirket_aciklama', 'Bu uygulama, işletmenizin envanterini kolayca yönetmenizi, ürünlerinizi takip etmenizi ve satışlarınızı kaydetmenizi sağlar. Barkod tarama özelliği ile hızlıca ürün bilgilerine erişebilir, stok durumunu kontrol edebilir ve satış işlemlerini gerçekleştirebilirsiniz. Anasayfadaki bilgileri ve listeyi kişiselleştirmek için Ayarlar > Anasayfa Ayarları bölümünü kullanabilirsiniz.', 'anasayfa', 'Şirket açıklaması');",
-                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('sirket_liste', '[\"Buraya iletişim bilgilerinizi ekleyebilirsiniz\", \"Örnek: Telefon numaranız\", \"Örnek: Web siteniz\", \"Örnek: İşletme adresiniz\", \"Örnek: IBAN numaranız\"]', 'anasayfa', 'Kopyalanabilir veya Paylaşılabilir Liste');",
-                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('barkod_yazi', '', 'urun', 'Barkod özelleştirilmiş yazı');",
-                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('barkod_yazi_aktif', 'false', 'urun', 'Barkod yazısı özelleştirilsin mi');",
-                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_1', '10', 'urun', 'Birinci indirim oranı');",
-                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_2', '20', 'urun', 'İkinci indirim oranı');",
-                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_3', '30', 'urun', 'Üçüncü indirim oranı');"
-                        ]
-                    },
-                    {
-                        toVersion: 3,
-                        statements: [
+                             END;`,
                             // Envanter hareketi silindiğinde envanter tablosunu güncelleyen trigger
                             `CREATE TRIGGER IF NOT EXISTS update_stock_before_movement_delete
                              BEFORE DELETE ON envanter_hareketi_urun
@@ -138,9 +117,21 @@ class InventoryService implements IInventoryService {
                                  -- Adet 0 ise kaydı sil
                                  DELETE FROM envanter 
                                  WHERE urun_id = OLD.urun_id AND adet = 0;
-                             END;`
+                             END;`,
+                            // Ayarlar
+                            'CREATE TABLE IF NOT EXISTS ayarlar (id INTEGER PRIMARY KEY AUTOINCREMENT, anahtar TEXT NOT NULL UNIQUE, deger TEXT, grup TEXT, aciklama TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT);',
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('tema', 'light', 'sistem', 'Uygulama teması (acik/karanlik)');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('tablo_gorunumu', 'varsayilan', 'sistem', 'Tablo görünüm modu (varsayilan/mobil)');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('sirket_adi', 'Envanter Yönetim Sistemi', 'anasayfa', 'Şirket adı');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('sirket_aciklama', 'Bu uygulama, işletmenizin envanterini kolayca yönetmenizi, ürünlerinizi takip etmenizi ve satışlarınızı kaydetmenizi sağlar. Barkod tarama özelliği ile hızlıca ürün bilgilerine erişebilir, stok durumunu kontrol edebilir ve satış işlemlerini gerçekleştirebilirsiniz. Anasayfadaki bilgileri ve listeyi kişiselleştirmek için Ayarlar > Anasayfa Ayarları bölümünü kullanabilirsiniz.', 'anasayfa', 'Şirket açıklaması');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('sirket_liste', '[\"Buraya iletişim bilgilerinizi ekleyebilirsiniz\", \"Örnek: Telefon numaranız\", \"Örnek: Web siteniz\", \"Örnek: İşletme adresiniz\", \"Örnek: IBAN numaranız\"]', 'anasayfa', 'Kopyalanabilir veya Paylaşılabilir Liste');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('barkod_yazi', '', 'urun', 'Barkod özelleştirilmiş yazı');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('barkod_yazi_aktif', 'false', 'urun', 'Barkod yazısı özelleştirilsin mi');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_1', '10', 'urun', 'Birinci indirim oranı');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_2', '20', 'urun', 'İkinci indirim oranı');",
+                            "INSERT OR IGNORE INTO ayarlar (anahtar, deger, grup, aciklama) VALUES ('indirim_oran_3', '30', 'urun', 'Üçüncü indirim oranı');"
                         ]
-                    },
+                    }
                 ],
             });
             // Veritabanını açma
@@ -184,6 +175,9 @@ class InventoryService implements IInventoryService {
                                    'ad', u.ad,
                                    'fiyat', u.fiyat,
                                    'indirimli_fiyat', u.indirimli_fiyat,
+                                   'minMaxStok',u.minMaxStok,
+                                   'minStok',u.minStok,
+                                   'maxStok',u.maxStok,
                                    'created_at', u.created_at,
                                    'updated_at', u.updated_at
                            ) as urun

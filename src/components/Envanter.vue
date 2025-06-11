@@ -40,6 +40,15 @@
                   Ekle/Çıkar
                 </v-btn>
               </template>
+              <template #[`item.adet`]="{item}">
+                <v-chip
+                    v-if="item.urun?.minMaxStok==1"
+                    :color="Helper.redToGreen(item.urun.minStok, item.urun.maxStok, item.adet)"
+                >
+                  {{ item.adet }}
+                </v-chip>
+                <span v-else>{{item.adet}}</span>
+              </template>
             </v-data-table>
             <v-btn
                 @click="router.push('/envanter-hareketi-gecmis')"
@@ -124,6 +133,7 @@ import inventoryService, {Tables} from "../services/inventoryService.ts";
 import type {IEnvanter, IUrun} from "../types/inventory.ts";
 import {useRoute, useRouter} from "vue-router";
 import {toast} from "vue3-toastify";
+import Helper from "../services/Helper.ts";
 
 const router = useRouter();
 const route = useRoute();

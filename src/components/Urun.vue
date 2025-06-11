@@ -34,6 +34,33 @@
             />
           </v-col>
           <v-col cols="12">
+            <v-checkbox
+                v-model="urunDuzenle.minMaxStok"
+                :true-value="1"
+                :false-value="0"
+                label="Minimum ve Maximum stok değeri gir."
+                hide-details
+            />
+          </v-col>
+          <v-col v-if="urunDuzenle.minMaxStok == 1" cols="6">
+            <v-number-input
+                v-model="urunDuzenle.minStok"
+                :rules="[v=> v<urunDuzenle.maxStok || 'Minimum stok miktarı maximum stok miktarından düşük olmalıdır.']"
+                :min="0"
+                control-variant="split"
+                label="Min Stok"
+            />
+          </v-col>
+          <v-col v-if="urunDuzenle.minMaxStok == 1" cols="6">
+            <v-number-input
+                v-model="urunDuzenle.maxStok"
+                :rules="[v=> v>urunDuzenle.minStok || 'Maximum stok miktarı minimum stok miktarından fazla olmalıdır.']"
+                :min="1"
+                control-variant="split"
+                label="Max Stok"
+            />
+          </v-col>
+          <v-col cols="12">
             <v-label>İndirim Uygula</v-label>
             <br>
             <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
@@ -111,6 +138,16 @@
             <v-label>Açıklama:</v-label>
             <br>
             {{ urun?.aciklama }}
+          </v-col>
+          <v-col v-if="urun.minMaxStok" cols="6">
+            <v-label>Minimum Stok:</v-label>
+            <br>
+            {{urun.minStok}}
+          </v-col>
+          <v-col v-if="urun.minMaxStok" cols="6">
+            <v-label>Maksimum Stok:</v-label>
+            <br>
+            {{urun.maxStok}}
           </v-col>
           <v-col cols="12">
             <v-card variant="outlined" color="secondary" align="center">

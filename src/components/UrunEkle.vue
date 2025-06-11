@@ -16,8 +16,35 @@
             <v-textarea
                 v-model="item.aciklama"
                 label="Açıklama"
-                class="my-2"
+                class="mt-2"
             />
+            <v-checkbox
+                v-model="item.minMaxStok"
+                :true-value="1"
+                :false-value="0"
+                label="Minimum ve Maximum stok değeri gir."
+                hide-details
+            />
+            <v-row v-if="item.minMaxStok == 1">
+              <v-col cols="6">
+                <v-number-input
+                    v-model="item.minStok"
+                    :rules="[v=> v<item.maxStok || 'Minimum stok miktarı maximum stok miktarından düşük olmalıdır.']"
+                    :min="0"
+                    control-variant="split"
+                    label="Min Stok"
+                />
+              </v-col>
+              <v-col cols="6">
+                <v-number-input
+                    v-model="item.maxStok"
+                    :rules="[v=> v>item.minStok || 'Maximum stok miktarı minimum stok miktarından fazla olmalıdır.']"
+                    :min="1"
+                    control-variant="split"
+                    label="Max Stok"
+                />
+              </v-col>
+            </v-row>
             <v-text-field
                 v-model="item.fiyat"
                 :rules="[v=>!!v||'Lütfen burayı doldurun.']"

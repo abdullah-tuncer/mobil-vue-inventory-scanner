@@ -15,6 +15,9 @@ export interface IUrun {
     fiyat: number;
     indirimli_fiyat?: number;
     barkodlar?: Array<IBarkod>;
+    minMaxStok: number;
+    minStok: number;
+    maxStok: number;
     created_at: string;
     updated_at?: string;
     is_deleted?: number;
