@@ -1,5 +1,10 @@
 import {BarcodeScanner} from "@capacitor-mlkit/barcode-scanning";
 import store from '../store';
+import {
+    type GoogleBarcodeScannerModuleInstallProgressEvent,
+    GoogleBarcodeScannerModuleInstallState
+} from "@capacitor-mlkit/barcode-scanning/dist/esm/definitions";
+import {toast} from "vue3-toastify";
 
 class BarkodTaramaService {
     private beepSound: HTMLAudioElement | null = null;
@@ -30,15 +35,51 @@ class BarkodTaramaService {
         if (!granted)
             throw new Error("Kamera izni verilmediği için tarama gerçekleşemedi.");
 
-        const {barcodes} = await BarcodeScanner.scan();
-        if (barcodes.length > 0) {
-            this.playBeepSound();
-            return {
-                type: barcodes[0].format,
-                data: barcodes[0].rawValue
-            };
+        const checkGoogleBarcodeScanner = await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable();
+        if (!checkGoogleBarcodeScanner.available) {
+            if (confirm("Tarama yapabilmek için Google Barkod Tarayıcı Modülü gereklidir. Yüklemek ister misiniz?")) {
+                try {
+                    toast.warning("Google Barkod Tarayıcı Modülü yükleme başlatılıyor. Lütfen yükleme tamamlanana kadar bekleyin.");
+                    await new Promise<void>(async (resolve, reject) => {
+                        await BarcodeScanner.installGoogleBarcodeScannerModule();
+                        await BarcodeScanner.addListener("googleBarcodeScannerModuleInstallProgress", (event: GoogleBarcodeScannerModuleInstallProgressEvent) => {
+                            const progress = event;
+                            if (progress.state === GoogleBarcodeScannerModuleInstallState.COMPLETED) {
+                                toast.success("Google Barkod Tarayıcı Modülü başarıyla yüklendi");
+                                resolve();
+                            } else if (progress.state === GoogleBarcodeScannerModuleInstallState.FAILED) {
+                                toast.error("Google Barkod Tarayıcı Modülü yüklenemedi.");
+                                reject(new Error("Google Barkod Tarayıcı Modülü kurulumu başarısız oldu."));
+                            }
+                        });
+                    });
+                } catch (error) {
+                    console.error("Google Barkod Tarayıcı Modülü yükleme hatası:", error);
+                    throw new Error(`Google Barkod Tarayıcı Modülü yüklenemedi: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+                }
+            }
+            else
+                throw new Error("Google Barkod Tarayıcı Modülü mevcut değil ve yükleme reddedildi.");
         }
-        return null;
+
+        try {
+            const {barcodes} = await BarcodeScanner.scan();
+            if (barcodes.length > 0) {
+                this.playBeepSound();
+                return {
+                    type: barcodes[0].format,
+                    data: barcodes[0].rawValue
+                };
+            }
+            else
+                return null;
+        } catch (error: any) {
+            console.error("Barkod tarama hatası:", error);
+            if (error.message=="scan canceled.")
+                throw new Error("Tarama iptal edildi.");
+            else
+                throw new Error(`Barkod tarama sırasında bir hata oluştu: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+        }
     }
 
     /**
