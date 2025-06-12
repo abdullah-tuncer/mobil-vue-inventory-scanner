@@ -62,6 +62,10 @@ watch(() => route.meta.navLocation, (newNavLocation) => {
 </script>
 
 <style>
+.transparent-bg .v-application {
+  background: transparent !important;
+}
+
 .no-ellipsis {
   white-space: normal !important;
   overflow: visible !important;
