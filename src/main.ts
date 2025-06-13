@@ -1,18 +1,21 @@
 import {createApp} from 'vue'
 import App from './App.vue'
-import store from './store';
+import {createPinia} from "pinia";
 import router from './router'
 import inventoryService from "./services/inventoryService.ts";
 import initVuetify from "./plugins/vuetify";
 import 'vue3-toastify/dist/index.css';
 import Vue3Toastify, {type ToastContainerOptions} from 'vue3-toastify';
 import {SplashScreen} from "@capacitor/splash-screen";
+import {useSettingsStore} from "./store/settingsStore.ts";
 
-const app = createApp(App).use(router).use(store);
+const pinia = createPinia();
+const app = createApp(App).use(router).use(pinia);
+const settingsStore = useSettingsStore();
 
 inventoryService.initializeDatabase().then(() => {
-    store.dispatch("settings/loadAllSettings").then(async () => {
-        let data = store.getters["settings/getSistemAyarlari"];
+    settingsStore.loadAllSettings().then(async () => {
+        let data = settingsStore.sistemAyarlari;
         const theme = data.find((v: any) => v.anahtar == "tema")?.deger ?? "dark";
         const settings = {
             tema: theme,

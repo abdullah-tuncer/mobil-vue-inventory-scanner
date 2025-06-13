@@ -156,11 +156,11 @@
 
 <script setup lang="ts">
 import {computed, ref} from 'vue';
-import {useStore} from 'vuex';
 import type {IUrun} from "../types/inventory.ts";
 import inventoryService from "../services/inventoryService.ts";
+import {useSettingsStore} from "../store/settingsStore.ts";
 
-const store = useStore();
+const settingsStore = useSettingsStore();
 
 const search = ref("");
 const silinenUrunler = ref<Array<IUrun>>([]);
@@ -170,78 +170,51 @@ const silinenUrunlerHeaders = [
 ];
 
 const tema = computed({
-  get: () => store.getters['settings/getAyarByKey']('tema') === 'dark',
-  set: (value) => store.dispatch('settings/updateSetting', {
-    key: 'tema',
-    value: value ? 'dark' : 'light'
-  })
+  get: () => settingsStore.getAyarByKey('tema') === 'dark',
+  set: (value) => settingsStore.updateSetting('tema', (value ? 'dark' : 'light'))
 });
 
 const tabloGorunumu = computed({
-  get: () => store.getters['settings/getAyarByKey']('tablo_gorunumu') === 'mobil',
-  set: (value) => store.dispatch('settings/updateSetting', {
-    key: 'tablo_gorunumu',
-    value: value ? 'mobil' : 'varsayilan'
-  })
+  get: () => settingsStore.getAyarByKey('tablo_gorunumu') === 'mobil',
+  set: (value) => settingsStore.updateSetting('tablo_gorunumu', (value ? 'mobil' : 'varsayilan'))
 });
 
 const sirketAdi = computed({
-  get: () => store.getters['settings/getAyarByKey']('sirket_adi') || '',
-  set: (value) => store.dispatch('settings/updateSetting', {
-    key: 'sirket_adi',
-    value
-  })
+  get: () => settingsStore.getAyarByKey('sirket_adi') || '',
+  set: (value) => settingsStore.updateSetting('sirket_adi', value)
 });
 
 const sirketAciklama = computed({
-  get: () => store.getters['settings/getAyarByKey']('sirket_aciklama') || '',
-  set: (value) => store.dispatch('settings/updateSetting', {
-    key: 'sirket_aciklama',
-    value
-  })
+  get: () => settingsStore.getAyarByKey('sirket_aciklama') || '',
+  set: (value) => settingsStore.updateSetting('sirket_aciklama', value)
 });
 
 const barkodYaziAktif = computed({
-  get: () => store.getters['settings/getAyarByKey']('barkod_yazi_aktif') === 'true',
-  set: (value) => store.dispatch('settings/updateSetting', {
-    key: 'barkod_yazi_aktif',
-    value: value ? 'true' : 'false'
-  })
+  get: () => settingsStore.getAyarByKey('barkod_yazi_aktif') === 'true',
+  set: (value) => settingsStore.updateSetting('barkod_yazi_aktif', (value ? 'true' : 'false'))
 });
 
 const barkodYazi = computed({
-  get: () => store.getters['settings/getAyarByKey']('barkod_yazi') || '',
-  set: (value) => store.dispatch('settings/updateSetting', {
-    key: 'barkod_yazi',
-    value
-  })
+  get: () => settingsStore.getAyarByKey('barkod_yazi') || '',
+  set: (value) => settingsStore.updateSetting('barkod_yazi', value)
 });
 
 const indirimOran1 = computed({
-  get: () => Number(store.getters['settings/getAyarByKey']('indirim_oran_1')),
-  set: (value) => store.dispatch('settings/updateSetting', {
-    key: 'indirim_oran_1',
-    value: value.toString()
-  })
+  get: () => Number(settingsStore.getAyarByKey('indirim_oran_1')),
+  set: (value) => settingsStore.updateSetting('indirim_oran_1', value.toString())
 });
 
 const indirimOran2 = computed({
-  get: () => Number(store.getters['settings/getAyarByKey']('indirim_oran_2')),
-  set: (value) => store.dispatch('settings/updateSetting', {
-    key: 'indirim_oran_2',
-    value: value.toString()
-  })
+  get: () => Number(settingsStore.getAyarByKey('indirim_oran_2')),
+  set: (value) => settingsStore.updateSetting('indirim_oran_2', value.toString())
 });
 
 const indirimOran3 = computed({
-  get: () => Number(store.getters['settings/getAyarByKey']('indirim_oran_3')),
-  set: (value) => store.dispatch('settings/updateSetting', {
-    key: 'indirim_oran_3',
-    value: value.toString()
-  })
+  get: () => Number(settingsStore.getAyarByKey('indirim_oran_3')),
+  set: (value) => settingsStore.updateSetting('indirim_oran_3',value.toString())
 });
 
-const sirketListe = computed(() => JSON.parse(store.getters['settings/getAyarByKey']('sirket_liste')));
+const sirketListe = computed(() => JSON.parse(settingsStore.getAyarByKey('sirket_liste') as string));
 const yeniListeItem = ref('');
 const onFlyList = ref(false);
 
@@ -251,10 +224,7 @@ const addListItem = async () => {
       onFlyList.value = true;
       let list = [...sirketListe.value];
       list.push(yeniListeItem.value);
-      await store.dispatch('settings/updateSetting', {
-        key: 'sirket_liste',
-        value: JSON.stringify(list)
-      });
+      await settingsStore.updateSetting('sirket_liste',JSON.stringify(list));
       yeniListeItem.value = '';
     }
   } finally {
@@ -267,10 +237,7 @@ const removeListItem = async (index: number) => {
     onFlyList.value = true;
     let list = [...sirketListe.value];
     list.splice(index, 1);
-    await store.dispatch('settings/updateSetting', {
-      key: 'sirket_liste',
-      value: JSON.stringify(list)
-    });
+    await settingsStore.updateSetting('sirket_liste',JSON.stringify(list));
   } finally {
     onFlyList.value = false;
   }

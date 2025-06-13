@@ -61,13 +61,13 @@
 <script setup lang="ts">
 import {BarkodOlusturucu} from "../services/BarkodOlusturucu.ts";
 import {nextTick, reactive, ref} from "vue";
-import {useStore} from "vuex";
+import {useSettingsStore} from "../store/settingsStore.ts";
 
 const props = defineProps<{
   barkodData: string;
   barkodType: string;
 }>();
-const store = useStore();
+const settingsStore = useSettingsStore();
 const barkodAyar = reactive({
   adet: 5,
   boyut: "normal",
@@ -84,8 +84,8 @@ const dialogDurumChange = (val:boolean) => {
 const onizleInit = async () => {
   // ayarlardacustom barkod yazısı var mı kontrol et
   let customTextControl = {
-    olsunMu: store.getters["settings/getAyarByKey"]("barkod_yazi_aktif"),
-    yazi: store.getters["settings/getAyarByKey"]("barkod_yazi")
+    olsunMu: settingsStore.getAyarByKey("barkod_yazi_aktif"),
+    yazi: settingsStore.getAyarByKey("barkod_yazi") as string
   };
   let yazi = barkodAyar.yaziOlsunMu ? (customTextControl.olsunMu ? customTextControl.yazi : "DEFAULT") : "NONE"
   barkodOlusturucu.value = new BarkodOlusturucu(props.barkodData, props.barkodType, (barkodAyar.boyut as "small" | "normal"), yazi);

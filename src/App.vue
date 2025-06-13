@@ -40,20 +40,22 @@
 <script setup lang="ts">
 import {computed, ref, watch} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
-import {useStore} from "vuex";
 import barkodTaramaService from "./services/BarkodTaramaService";
 import {NavLocation} from "./router";
+import {useScannerStore} from "./store/scannerStore.ts";
+import {useSettingsStore} from "./store/settingsStore.ts";
 
 const router = useRouter();
 const route = useRoute();
-const store = useStore();
-const theme = computed(() => store.getters['settings/getAyarByKey']("tema"));
+const scannerStore = useScannerStore();
+const settingsStore = useSettingsStore();
+const theme = computed(() => settingsStore.getAyarByKey("tema") as string);
 const activeTab = ref(NavLocation.ANASAYFA);
-const isScanning = computed(() => store.getters['scanner/isScanning']);
+const isScanning = computed(() => scannerStore.getIsScanning);
 
 const stopScanning = async () => {
   await barkodTaramaService.stopContinuousScan();
-  store.dispatch('scanner/stopScanning');
+  scannerStore.stopScanning();
 };
 
 watch(() => route.meta.navLocation, (newNavLocation) => {

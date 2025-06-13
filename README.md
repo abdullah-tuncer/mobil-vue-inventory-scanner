@@ -19,7 +19,7 @@ Barkod tarama özelliği ile envanter ve satış yönetimi yapabileceğiniz mobi
 - Vuetify 3
 - Capacitor
 - SQLite
-- Vuex
+- Pinia
 - Vue Router
 
 ## Kurulum

@@ -56,7 +56,7 @@
             <br>
             <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
               <v-btn @click="indirimUygula(0)">Yok</v-btn>
-              <v-btn v-for="oran in indirimOranlari" @click="indirimUygula(oran)">%{{ oran }}</v-btn>
+              <v-btn v-for="oran in settingsStore.indirimOranlari" @click="indirimUygula(oran)">%{{ oran }}</v-btn>
             </v-btn-toggle>
             <v-text-field
                 v-model="item.indirimli_fiyat"
@@ -106,25 +106,19 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref} from "vue";
+import {ref} from "vue";
 import {Urun} from "../classes/Urun.ts";
 import InventoryService, {Tables} from "../services/inventoryService.ts";
 import {useRouter} from "vue-router";
-import {useStore} from "vuex";
 import barkodTaramaService from "../services/BarkodTaramaService.ts";
 import {toast} from "vue3-toastify";
+import {useSettingsStore} from "../store/settingsStore.ts";
 
 const router = useRouter();
-const store = useStore();
+const settingsStore = useSettingsStore();
 const form = ref();
 const item = ref(new Urun());
 const barkodlar = ref<Array<any>>([]);
-
-const indirimOranlari = computed(() => [
-  Number(store.getters["settings/getAyarByKey"]("indirim_oran_1")),
-  Number(store.getters["settings/getAyarByKey"]("indirim_oran_2")),
-  Number(store.getters["settings/getAyarByKey"]("indirim_oran_3")),
-])
 
 const indirimUygula = (oran: number) => {
   if (oran == 0)

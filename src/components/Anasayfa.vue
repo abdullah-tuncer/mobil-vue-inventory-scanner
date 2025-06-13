@@ -48,7 +48,6 @@
 </template>
 
 <script setup lang="ts">
-import {useStore} from "vuex";
 import {computed, ref} from "vue";
 import {Clipboard} from '@capacitor/clipboard';
 import {Share} from "@capacitor/share";
@@ -56,14 +55,15 @@ import barkodTaramaService from "../services/BarkodTaramaService.ts";
 import inventoryService from "../services/inventoryService.ts";
 import {useRouter} from "vue-router";
 import {toast} from "vue3-toastify";
+import {useSettingsStore} from "../store/settingsStore.ts";
 
-const store = useStore();
+const settingsStore = useSettingsStore();
 const router = useRouter();
 const snackbar = ref(false);
 
-const firma_ad = computed(() => store.getters["settings/getAyarByKey"]("sirket_adi"))
-const firma_aciklama = computed(() => store.getters["settings/getAyarByKey"]("sirket_aciklama"))
-const list = computed(() => JSON.parse(store.getters['settings/getAyarByKey']('sirket_liste')));
+const firma_ad = computed(() => settingsStore.getAyarByKey("sirket_adi"))
+const firma_aciklama = computed(() => settingsStore.getAyarByKey("sirket_aciklama"))
+const list = computed(() => JSON.parse(settingsStore.getAyarByKey('sirket_liste') ?? "[]"));
 
 const kopyala = async (str: string) => {
   await Clipboard.write({

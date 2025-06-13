@@ -77,7 +77,7 @@
               <br>
               <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
                 <v-btn @click="indirimUygula(0)" size="small">Yok</v-btn>
-                <v-btn v-for="oran in indirimOranlari" @click="indirimUygula(oran)" size="small">%{{ oran }}</v-btn>
+                <v-btn v-for="oran in settingsStore.indirimOranlari" @click="indirimUygula(oran)" size="small">%{{ oran }}</v-btn>
               </v-btn-toggle>
               <v-number-input
                   v-model="satis.ekstra_indirim_tutari"
@@ -140,18 +140,12 @@ import {Satis} from "../classes/Satis.ts";
 import {EnvanteHareketiIslemTipi, type ISatisUrunu, type IUrun} from "../types/inventory.ts";
 import {toast} from "vue3-toastify";
 import inventoryService, {Tables} from "../services/inventoryService.ts";
-import {useStore} from "vuex";
 import BarkodTaramaService from "../services/BarkodTaramaService.ts";
+import {useSettingsStore} from "../store/settingsStore.ts";
 
 const satis = ref(new Satis());
 const urun = ref<IUrun>();
-const store = useStore();
-
-const indirimOranlari = computed(() => [
-  Number(store.getters["settings/getAyarByKey"]("indirim_oran_1")),
-  Number(store.getters["settings/getAyarByKey"]("indirim_oran_2")),
-  Number(store.getters["settings/getAyarByKey"]("indirim_oran_3")),
-]);
+const settingsStore = useSettingsStore();
 
 const araToplam = computed(() => {
   let total = 0;

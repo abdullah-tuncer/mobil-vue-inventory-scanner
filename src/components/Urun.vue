@@ -65,7 +65,7 @@
             <br>
             <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
               <v-btn @click="indirimUygula(0)">Yok</v-btn>
-              <v-btn v-for="oran in indirimOranlari" @click="indirimUygula(oran)">%{{ oran }}</v-btn>
+              <v-btn v-for="oran in settingsStore.indirimOranlari" @click="indirimUygula(oran)">%{{ oran }}</v-btn>
             </v-btn-toggle>
             <v-text-field
                 v-model="urunDuzenle.indirimli_fiyat"
@@ -252,7 +252,6 @@
 import {computed, onMounted, ref} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import inventoryService, {Tables} from "../services/inventoryService.ts";
-import {useStore} from "vuex";
 import barkodTaramaService from "../services/BarkodTaramaService.ts";
 import {toast} from "vue3-toastify";
 import Helper from "../services/Helper.ts";
@@ -264,10 +263,11 @@ import {
 import SatisDetay from "./SatisDetay.vue";
 import EnvanterHareketiGecmisDetay from "./EnvanterHareketiGecmisDetay.vue";
 import BarkodOnizle from "./BarkodOnizle.vue";
+import {useSettingsStore} from "../store/settingsStore.ts";
 
 const router = useRouter();
 const route = useRoute();
-const store = useStore();
+const settingsStore = useSettingsStore();
 const duzenleAktif = ref(false);
 
 const urun = ref<any>(null);
@@ -308,12 +308,6 @@ const currentComponent = computed(() => {
     return EnvanterHareketiGecmisDetay;
   }
 });
-
-const indirimOranlari = computed(() => [
-  Number(store.getters["settings/getAyarByKey"]("indirim_oran_1")),
-  Number(store.getters["settings/getAyarByKey"]("indirim_oran_2")),
-  Number(store.getters["settings/getAyarByKey"]("indirim_oran_3")),
-])
 
 const indirimUygula = (oran: number) => {
   if (oran == 0)

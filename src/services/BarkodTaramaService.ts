@@ -1,10 +1,10 @@
 import {BarcodeScanner} from "@capacitor-mlkit/barcode-scanning";
-import store from '../store';
 import {
     type GoogleBarcodeScannerModuleInstallProgressEvent,
     GoogleBarcodeScannerModuleInstallState
 } from "@capacitor-mlkit/barcode-scanning/dist/esm/definitions";
 import {toast} from "vue3-toastify";
+import {useScannerStore} from "../store/scannerStore.ts";
 
 class BarkodTaramaService {
     private beepSound: HTMLAudioElement | null = null;
@@ -104,11 +104,11 @@ class BarkodTaramaService {
         if (!granted) {
             return false;
         }
-
+        const scannerStore = useScannerStore();
         try {
             this.scanCallback = callback;
             document.querySelector('body')?.classList.add('transparent-bg');
-            await store.dispatch('scanner/startScanning');
+            scannerStore.startScanning();
             // Barkod tarama dinleyicisini ekle
             // @ts-ignore
             await BarcodeScanner.addListener('barcodeScanned', (result: any) => {
@@ -127,7 +127,7 @@ class BarkodTaramaService {
             return true;
         } catch (error) {
             console.error('Sürekli tarama başlatılamadı:', error);
-            await store.dispatch('scanner/stopScanning');
+            scannerStore.stopScanning();
             return false;
         }
     }
@@ -138,7 +138,8 @@ class BarkodTaramaService {
     async stopContinuousScan(): Promise<void> {
         try {
             document.querySelector('body')?.classList.remove('transparent-bg');
-            await store.dispatch('scanner/stopScanning');
+            const scannerStore = useScannerStore();
+            scannerStore.stopScanning();
             await BarcodeScanner.removeAllListeners();
             await BarcodeScanner.stopScan();
             this.scanCallback = null;
@@ -152,7 +153,8 @@ class BarkodTaramaService {
      * @returns Tarama aktif mi
      */
     isScanningActive(): boolean {
-        return store.getters['scanner/isScanning'];
+        const scannerStore = useScannerStore();
+        return scannerStore.getIsScanning;
     }
 }
 
