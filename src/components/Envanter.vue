@@ -16,6 +16,7 @@
                 :headers="envanterHeaders"
                 :items="envanterItems"
                 :search="search"
+                ref="envanterTable"
             >
               <template #top>
                 <v-text-field
@@ -33,6 +34,7 @@
                 <v-btn
                     @click="router.push('/envanter-hareketi')"
                     prepend-icon="mdi-plus-minus-variant"
+                    data-test="btn-ekle-cikar"
                     rounded="xs"
                     class="my-2"
                     block
@@ -67,6 +69,7 @@
                 :headers="urunlerHeaders"
                 :items="urunlerItems"
                 :search="search"
+                ref="urunlerTable"
             >
               <template #top>
                 <v-text-field
@@ -81,7 +84,14 @@
                     clearable
                     flat
                 />
-                <v-btn @click="router.push('urun-ekle')" block class="my-2" rounded="xs" prepend-icon="mdi-plus">
+                <v-btn
+                    @click="router.push('urun-ekle')"
+                    data-test="btn-urun-ekle"
+                    prepend-icon="mdi-plus"
+                    rounded="xs"
+                    class="my-2"
+                    block
+                >
                   Ekle
                 </v-btn>
               </template>
@@ -155,6 +165,17 @@ const urunlerHeaders = ref([
   {title: "Sil", key: "delete", width: 64, sortable: false, align: "center" as const}
 ]);
 const urunlerItems = ref<Array<IUrun>>([]);
+
+if (import.meta.vitest) {
+  defineExpose({
+    tab,
+    envanterHeaders,
+    envanterItems,
+    urunlerHeaders,
+    urunlerItems,
+    search
+  });
+}
 
 onMounted(() => {
   if (route.query.tab == "urunler")

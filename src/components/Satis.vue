@@ -18,6 +18,7 @@
             <v-col cols="12">
               <v-btn
                   @click="cokluTarama"
+                  data-test="coklu-tarama-buton"
                   prepend-icon="mdi-barcode-scan"
                   color="secondary"
                   block
@@ -37,7 +38,7 @@
             {{ satis.urunler.length }} Ürün
           </v-chip>
         </v-card-title>
-        <v-card-text>
+        <v-card-text data-test="sepet">
           <v-list v-if="satis.urunler.length > 0">
             <v-list-item v-for="(item, index) in satis.urunler" :key="index">
               <v-list-item-title class="text-wrap">{{ (item.urun as IUrun).ad }}</v-list-item-title>
@@ -92,7 +93,7 @@
                   reverse
               />
             </v-col>
-            <v-col cols="12">
+            <v-col cols="12" data-test="hesap-bilgileri">
               <v-card variant="outlined" class="pa-3">
                 <v-row>
                   <v-col cols="6" class="text-subtitle-1 font-weight-bold">Ara Toplam:</v-col>
@@ -146,6 +147,12 @@ import {useSettingsStore} from "../store/settingsStore.ts";
 const satis = ref(new Satis());
 const urun = ref<IUrun>();
 const settingsStore = useSettingsStore();
+
+if (import.meta.vitest) {
+  defineExpose({
+    satis
+  });
+}
 
 const araToplam = computed(() => {
   let total = 0;

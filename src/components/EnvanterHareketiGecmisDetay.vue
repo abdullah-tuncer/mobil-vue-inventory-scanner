@@ -2,7 +2,14 @@
   <v-row class="ma-auto">
     <v-col cols="12" class="py-0">
       <h2>
-        <v-btn v-if="!hideBackButton" @click="router.back()" variant="text" icon="mdi-arrow-left" class="mt-n1 ml-n4"/>
+        <v-btn
+            v-if="!hideBackButton"
+            @click="router.back()"
+            data-test="geri-buton"
+            icon="mdi-arrow-left"
+            class="mt-n1 ml-n4"
+            variant="text"
+        />
         {{ title }}
       </h2>
     </v-col>
@@ -60,7 +67,7 @@
           </v-alert>
         </v-card-text>
 
-        <v-card-text>
+        <v-card-text data-test="islem-bilgileri">
           <v-card variant="outlined" class="pa-3">
             <v-row>
               <v-col cols="6" class="text-subtitle-1 py-1">İşlem Tipi:</v-col>
@@ -103,6 +110,12 @@ const route = useRoute();
 const router = useRouter();
 const props = defineProps<{ hareketId?: number | string, hideBackButton?: boolean }>();
 const envanterHareketi = ref<IEnvanterHareketi>();
+
+if (import.meta.vitest) {
+  defineExpose({
+    envanterHareketi
+  });
+}
 
 const title = computed(() => {
   if (envanterHareketi.value) {

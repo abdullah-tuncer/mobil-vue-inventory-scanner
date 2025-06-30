@@ -53,6 +53,13 @@ const theme = computed(() => settingsStore.getAyarByKey("tema") as string);
 const activeTab = ref(NavLocation.ANASAYFA);
 const isScanning = computed(() => scannerStore.getIsScanning);
 
+if (import.meta.vitest) {
+  defineExpose({
+    theme,
+    activeTab
+  });
+}
+
 const stopScanning = async () => {
   await barkodTaramaService.stopContinuousScan();
   scannerStore.stopScanning();

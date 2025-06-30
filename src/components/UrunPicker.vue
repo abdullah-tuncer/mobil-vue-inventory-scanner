@@ -28,6 +28,12 @@ const items = ref<Array<IUrun>>([]);
 const selectedItem = defineModel<IUrun | null>();
 defineProps<{ rules?: Array<any> }>();
 
+if (import.meta.vitest) {
+  defineExpose({
+    selectedItem
+  });
+}
+
 onMounted(() => {
   load();
 });

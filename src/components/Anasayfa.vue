@@ -22,8 +22,8 @@
         <v-list-item v-for="str in list">
           <v-list-item-title class="no-ellipsis">{{ str }}</v-list-item-title>
           <template #append>
-            <v-icon @click="kopyala(str)">mdi-content-copy</v-icon>
-            <v-icon @click="paylas(str)" class="ml-2">mdi-share</v-icon>
+            <v-icon @click="kopyala(str)" data-test="copy-icon">mdi-content-copy</v-icon>
+            <v-icon @click="paylas(str)" class="ml-2" data-test="share-icon">mdi-share</v-icon>
           </template>
         </v-list-item>
       </v-list>

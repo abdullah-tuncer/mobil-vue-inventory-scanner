@@ -120,6 +120,12 @@ const form = ref();
 const item = ref(new Urun());
 const barkodlar = ref<Array<any>>([]);
 
+if (import.meta.vitest) {
+  defineExpose({
+    barkodlar
+  });
+}
+
 const indirimUygula = (oran: number) => {
   if (oran == 0)
     item.value.indirimli_fiyat = undefined;

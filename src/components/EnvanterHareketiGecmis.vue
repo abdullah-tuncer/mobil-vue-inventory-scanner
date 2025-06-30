@@ -2,7 +2,7 @@
   <v-row class="ma-auto">
     <v-col cols="12" class="py-0">
       <h2>
-        <v-btn @click="router.back()" variant="text" icon="mdi-arrow-left" class="mt-n1 ml-n4"/>
+        <v-btn @click="router.back()" variant="text" icon="mdi-arrow-left" class="mt-n1 ml-n4" data-test="geri-buton"/>
         Envanter Hareket Geçmişi
       </h2>
     </v-col>
@@ -68,6 +68,12 @@ const headers = [
   {title: "Açıklama", value: "aciklama", key: "aciklama"},
   {title: "İşlem", key: "islem", size: 56, sortable: false, align: "center" as const}
 ]
+
+if (import.meta.vitest) {
+  defineExpose({
+    items
+  });
+}
 
 onMounted(async () => {
   await load();

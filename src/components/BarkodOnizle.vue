@@ -38,6 +38,7 @@
         <v-col cols="12">
           <v-btn
               @click="cokluBarkodIndir()"
+              data-test="adetIndir"
               color="primary"
               block
           >
@@ -47,6 +48,7 @@
         <v-col cols="12">
           <v-btn
               @click="sayfayaSigacakBarkodIndir()"
+              data-test="fullIndir"
               color="success"
               block
           >

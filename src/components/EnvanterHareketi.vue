@@ -42,7 +42,7 @@
                 class="my-2"
             />
           </v-form>
-          <v-btn @click="addList" class="my-2" block>Ekle</v-btn>
+          <v-btn @click="addList" class="my-2" data-test="ekle-btn" block>Ekle</v-btn>
           <v-card variant="outlined" class="mt-4">
             <v-table>
               <thead>
@@ -101,6 +101,12 @@ const listItem = reactive({
   adet: 1
 })
 const list = reactive<Array<{ urun: IUrun, adet: number }>>([]);
+
+if (import.meta.vitest) {
+  defineExpose({
+    list
+  });
+}
 
 const addList = async () => {
   const {valid} = await form.value?.validate();

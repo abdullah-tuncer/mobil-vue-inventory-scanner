@@ -2,7 +2,14 @@
   <v-row class="ma-auto">
     <v-col cols="12" class="py-0">
       <h2>
-        <v-btn v-if="!hideBackButton" @click="router.back()" variant="text" icon="mdi-arrow-left" class="mt-n1 ml-n4"/>
+        <v-btn
+            v-if="!hideBackButton"
+            @click="router.back()"
+            data-test="geri-buton"
+            icon="mdi-arrow-left"
+            class="mt-n1 ml-n4"
+            variant="text"
+        />
         Satış Detayı
       </h2>
     </v-col>
@@ -25,17 +32,17 @@
         <v-card-text>
           <h2>Satılan Ürünler</h2>
           <v-list>
-            <v-list-item v-for="(item, index) in satis.satis_urunleri" :key="index" class="px-0">
+            <v-list-item v-for="(item, index) in satis?.satis_urunleri" :key="index" class="px-0">
               <v-list-item-title class="text-wrap">{{ (item.urun as IUrun).ad }}</v-list-item-title>
               <v-list-item-subtitle>
-                {{ item.adet }} Adet x 
+                {{ item.adet }} Adet x
                 <span v-if="item.indirimli_birim_fiyat">
                   <del class="text-grey">{{ item.birim_fiyat }}₺</del>
                   {{ item.indirimli_birim_fiyat }}₺
                 </span>
                 <span v-else>{{ item.birim_fiyat }}₺</span>
               </v-list-item-subtitle>
-              
+
               <template v-slot:append>
                 <div class="text-right">
                   <strong>{{ calculateItemTotal(item) }}₺</strong>
@@ -44,23 +51,23 @@
             </v-list-item>
           </v-list>
         </v-card-text>
-        
+
         <v-divider/>
 
-        <v-card-text>
+        <v-card-text data-test="hesap-bilgileri">
           <v-card variant="outlined" class="pa-3">
             <v-row>
               <v-col cols="6" class="text-subtitle-1">Ara Toplam:</v-col>
               <v-col cols="6" class="text-right text-subtitle-1">{{ calculateSubtotal() }}₺</v-col>
             </v-row>
-            <v-row v-if="satis.ekstra_indirim_tutari > 0">
+            <v-row v-if="satis?.ekstra_indirim_tutari > 0">
               <v-col cols="6" class="text-subtitle-1">Ekstra İndirim:</v-col>
-              <v-col cols="6" class="text-right text-subtitle-1 text-red">-{{ satis.ekstra_indirim_tutari.toFixed(2) }}₺</v-col>
+              <v-col cols="6" class="text-right text-subtitle-1 text-red">-{{ satis?.ekstra_indirim_tutari.toFixed(2) }}₺</v-col>
             </v-row>
             <v-divider class="my-2"/>
             <v-row>
               <v-col cols="6" class="text-h6 font-weight-bold">Toplam:</v-col>
-              <v-col cols="6" class="text-right text-h6 font-weight-bold">{{ satis.toplam_tutar.toFixed(2) }}₺</v-col>
+              <v-col cols="6" class="text-right text-h6 font-weight-bold">{{ satis?.toplam_tutar.toFixed(2) }}₺</v-col>
             </v-row>
           </v-card>
         </v-card-text>
@@ -85,6 +92,12 @@ const router = useRouter();
 const props = defineProps<{ satisId?: string | number, hideBackButton?: boolean }>();
 
 const satis = ref();
+
+if (import.meta.vitest) {
+  defineExpose({
+    satis
+  });
+}
 
 const tarih = computed(() => {
   if (satis.value) {
