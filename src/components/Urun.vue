@@ -2,7 +2,7 @@
   <v-row class="ma-auto">
     <v-col cols="10" class="py-0">
       <h2>
-        <v-btn @click="router.back()" variant="text" icon="mdi-arrow-left" class="mt-n1 ml-n4"/>
+        <v-btn @click="router.back()" variant="text" icon="mdi-arrow-left" class="mt-n1 ml-n4" data-test="geri-buton"/>
         {{ urun?.ad }}
       </h2>
     </v-col>
@@ -11,124 +11,9 @@
     </v-col>
     <v-col cols="12">
       <v-card v-if="duzenleAktif">
-        <v-row class="ma-auto">
-          <v-col cols="12">
-            <v-text-field
-                v-model="urunDuzenle.ad"
-                :rules="[v=>!!v||'Lütfen burayı doldurun.']"
-                label="Ad"
-            />
-          </v-col>
-          <v-col cols="12">
-            <v-textarea
-                v-model="urunDuzenle.aciklama"
-                label="Açıklama"
-            />
-          </v-col>
-          <v-col cols="12">
-            <v-text-field
-                v-model="urunDuzenle.fiyat"
-                :rules="[v=>!!v||'Lütfen burayı doldurun.']"
-                label="Fiyat"
-                type="number"
-            />
-          </v-col>
-          <v-col cols="12">
-            <v-checkbox
-                v-model="urunDuzenle.minMaxStok"
-                :true-value="1"
-                :false-value="0"
-                label="Minimum ve Maximum stok değeri gir."
-                hide-details
-            />
-          </v-col>
-          <v-col v-if="urunDuzenle.minMaxStok == 1" cols="6">
-            <v-number-input
-                v-model="urunDuzenle.minStok"
-                :rules="[v=> v<urunDuzenle.maxStok || 'Minimum stok miktarı maximum stok miktarından düşük olmalıdır.']"
-                :min="0"
-                control-variant="split"
-                label="Min Stok"
-            />
-          </v-col>
-          <v-col v-if="urunDuzenle.minMaxStok == 1" cols="6">
-            <v-number-input
-                v-model="urunDuzenle.maxStok"
-                :rules="[v=> v>urunDuzenle.minStok || 'Maximum stok miktarı minimum stok miktarından fazla olmalıdır.']"
-                :min="1"
-                control-variant="split"
-                label="Max Stok"
-            />
-          </v-col>
-          <v-col cols="12">
-            <v-label>İndirim Uygula</v-label>
-            <br>
-            <v-btn-toggle rounded="1" variant="outlined" class="mb-2" color="primary" divided>
-              <v-btn @click="indirimUygula(0)">Yok</v-btn>
-              <v-btn v-for="oran in settingsStore.indirimOranlari" @click="indirimUygula(oran)">%{{ oran }}</v-btn>
-            </v-btn-toggle>
-            <v-text-field
-                v-model="urunDuzenle.indirimli_fiyat"
-                label="İndirimli Fiyat"
-                type="number"
-                class="my-2"
-                hide-details
-            />
-          </v-col>
-          <v-col cols="12">
-            <v-alert variant="outlined" type="info">
-              Bazı ürünlerde barkod bulunmayabilir. Bu durumda, uygulamanın tanıyabileceği özel bir barkod
-              oluşturabilirsiniz.
-              Oluşturduğunuz barkodu yazdırabilir ve ürüne yapıştırabilirsiniz. Bu barkod, ürünü hızlıca taramanıza ve
-              bulmanıza yardımcı olacaktır.
-
-              <v-btn @click="createCustomBarcode" prepend-icon="mdi-barcode" rounded="1" variant="outlined" block>
-                Özel Barkod Oluştur
-              </v-btn>
-            </v-alert>
-          </v-col>
-          <v-col cols="12">
-            <v-btn @click="addBarcode" prepend-icon="mdi-barcode-scan" rounded="1" variant="outlined" block>
-              Barkod Ekle
-            </v-btn>
-            <v-card
-                class="border-t-0 rounded-t-0 mx-3"
-                variant="outlined"
-                color="primary"
-            >
-              <v-list>
-                <v-list-item v-if="filteredBarkodlar.length>0" v-for="(barkod,index) in filteredBarkodlar">
-                  <v-list-item-title>
-                    {{ barkod.data }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle>
-                    {{ barkod.type }}
-                  </v-list-item-subtitle>
-                  <template #append>
-                    <v-icon @click="removeBarcode(index)">mdi-close</v-icon>
-                  </template>
-                </v-list-item>
-                <v-list-item v-else>
-                  <v-list-item-title>
-                    Ürüne tanımlı barkod bulunamadı.
-                  </v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-card>
-          </v-col>
-        </v-row>
-        <v-card-actions>
-          <v-row>
-            <v-col cols="6">
-              <v-btn @click="cancel" color="secondary" block>Vazgeç</v-btn>
-            </v-col>
-            <v-col cols="6">
-              <v-btn @click="save" color="primary" block>Kaydet</v-btn>
-            </v-col>
-          </v-row>
-        </v-card-actions>
+       <urun-duzenle v-model="urunDuzenleData" @success="load" @close="duzenleAktif=false" :urun="urun"/>
       </v-card>
-      <v-card v-else>
+      <v-card v-else data-test="urun-bilgileri">
         <v-row class="ma-auto">
           <v-col cols="12">
             <v-label>Ad:</v-label>
@@ -139,12 +24,12 @@
             <br>
             {{ urun?.aciklama }}
           </v-col>
-          <v-col v-if="urun.minMaxStok" cols="6">
+          <v-col v-if="urun?.minMaxStok == 1" cols="6">
             <v-label>Minimum Stok:</v-label>
             <br>
             {{urun.minStok}}
           </v-col>
-          <v-col v-if="urun.minMaxStok" cols="6">
+          <v-col v-if="urun?.minMaxStok == 1" cols="6">
             <v-label>Maksimum Stok:</v-label>
             <br>
             {{urun.maxStok}}
@@ -252,8 +137,6 @@
 import {computed, onMounted, ref} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import inventoryService, {Tables} from "../services/inventoryService.ts";
-import barkodTaramaService from "../services/BarkodTaramaService.ts";
-import {toast} from "vue3-toastify";
 import Helper from "../services/Helper.ts";
 import {
   EnvanteHareketiIslemTipi,
@@ -262,16 +145,15 @@ import {
 } from "../types/inventory.ts";
 import SatisDetay from "./SatisDetay.vue";
 import EnvanterHareketiGecmisDetay from "./EnvanterHareketiGecmisDetay.vue";
+import UrunDuzenle from "./UrunDuzenle.vue";
 import BarkodOnizle from "./BarkodOnizle.vue";
-import {useSettingsStore} from "../store/settingsStore.ts";
 
 const router = useRouter();
 const route = useRoute();
-const settingsStore = useSettingsStore();
 const duzenleAktif = ref(false);
 
 const urun = ref<any>(null);
-const urunDuzenle = ref<any>(null);
+const urunDuzenleData = ref<any>(null);
 const headers = ref([
   {title: "Tarih", key: "tarih"},
   {title: "İşlem", key: "islem"},
@@ -309,13 +191,6 @@ const currentComponent = computed(() => {
   }
 });
 
-const indirimUygula = (oran: number) => {
-  if (oran == 0)
-    urunDuzenle.value.indirimli_fiyat = undefined;
-  else
-    urunDuzenle.value.indirimli_fiyat = urunDuzenle.value.fiyat - (urunDuzenle.value.fiyat * (oran / 100));
-}
-
 onMounted(async () => {
   await load();
 })
@@ -323,9 +198,9 @@ onMounted(async () => {
 const load = async () => {
   const id = route.params.id as string;
   urun.value = await inventoryService.getItemById(Tables.URUNLER, id);
-  urunDuzenle.value = JSON.parse(JSON.stringify(urun.value));
-  if (urunDuzenle.value?.barkodlar) {
-    urunDuzenle.value.barkodlar.forEach((barkod: any) => barkod.isDeleted = false);
+  urunDuzenleData.value = JSON.parse(JSON.stringify(urun.value));
+  if (urunDuzenleData.value?.barkodlar) {
+    urunDuzenleData.value.barkodlar.forEach((barkod: any) => barkod.isDeleted = false);
   }
   urunHareketiBilgileri.value = await inventoryService.urunSatisBilgileri(id);
 }
@@ -334,80 +209,4 @@ const indirimOrani = (urun: any) => {
   let oran = Helper.indirimOraniHesapla(urun.fiyat, urun.indirimli_fiyat);
   return Number(oran).toFixed(1);
 }
-
-const filteredBarkodlar = computed(() => {
-  return urunDuzenle.value.barkodlar.filter((barkod: any) => !barkod.isDeleted);
-});
-
-const addBarcode = async () => {
-  try {
-    const barkod = await barkodTaramaService.scanBarcode();
-    if (barkod)
-      urunDuzenle.value.barkodlar.push({...barkod, isDeleted: false});
-  } catch (e: any) {
-    toast.error(e.message);
-  }
-}
-
-const removeBarcode = (index: number) => {
-  let barkod = filteredBarkodlar.value[index];
-  if (barkod.id) {
-    urunDuzenle.value.barkodlar.find((v: any) => v.id == barkod.id).isDeleted = true;
-  } else {
-    let findedIndex = urunDuzenle.value.barkodlar.findIndex((v: any) => v == barkod);
-    urunDuzenle.value.barkodlar.splice(findedIndex, 1);
-  }
-}
-
-const save = async () => {
-  try {
-    let barkodlar = [...urunDuzenle.value.barkodlar];
-    let newData = urunDuzenle.value;
-    delete newData.barkodlar;
-
-    await inventoryService.updateItem(Tables.URUNLER, newData);
-
-    const deletedBarkodlar = barkodlar.filter((b: any) => b.isDeleted && b.id);
-    for (const barkod of deletedBarkodlar) {
-      await inventoryService.deleteItem(Tables.BARKODLAR, barkod.id);
-    }
-
-    const newBarkodlar = barkodlar.filter((b: any) => !b.isDeleted && !b.id);
-    for (const barkod of newBarkodlar) {
-      await inventoryService.addItem(Tables.BARKODLAR, {
-        urun_id: newData.id,
-        data: barkod.data,
-        type: barkod.type,
-        created_at: new Date().toISOString()
-      });
-    }
-
-    await load();
-  } catch (e: any) {
-    console.error('Urun.vue - save :', e.message)
-  } finally {
-    duzenleAktif.value = false
-  }
-}
-
-const cancel = () => {
-  urunDuzenle.value = JSON.parse(JSON.stringify(urun.value));
-  if (urunDuzenle.value?.barkodlar) {
-    urunDuzenle.value.barkodlar.forEach((barkod: any) => barkod.isDeleted = false);
-  }
-  duzenleAktif.value = false;
-}
-
-const createCustomBarcode = () => {
-  const timestamp = new Date().getTime();
-  const barcodeData = `${urunDuzenle.value.id}-${timestamp}`;
-  urunDuzenle.value.barkodlar.push({
-    data: barcodeData,
-    type: "CODE_128",
-    isDeleted: false
-  });
-};
 </script>
-
-<style scoped>
-</style>

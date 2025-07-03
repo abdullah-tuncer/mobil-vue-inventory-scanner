@@ -11,7 +11,6 @@ import {VBtn, VBtnToggle} from "vuetify/components";
 import {createTestingPinia} from "@pinia/testing";
 import {EnvanteHareketiIslemTipi, IUrun} from "../../src/types/inventory";
 
-
 vi.mock("../../src/services/inventoryService.ts", () => ({
     default: {
         getItems: vi.fn().mockResolvedValue([
@@ -26,13 +25,6 @@ vi.mock("../../src/services/inventoryService.ts", () => ({
         ENVANTER_HAREKETLERI: "envanter_hareketleri",
         SATIS_URUNLERI: "satis_urunleri",
         ENVANTER_HAREKETI_URUN: "envanter_hareketi_urun"
-    }
-}))
-
-vi.mock("../../src/services/BarkodTaramaService.ts", () => ({
-    default: {
-        startContinuousScan: vi.fn(),
-        stopContinuousScan: vi.fn(),
     }
 }))
 

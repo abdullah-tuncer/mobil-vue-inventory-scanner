@@ -40,7 +40,7 @@ const urunlerResolve = [
     {id: 4, ad: "Test Urun4", fiyat: 35, indirimli_fiyat: 28}
 ];
 
-vi.mock("../../src/services/inventoryService", () => {
+vi.mock("../../src/services/inventoryService.ts", () => {
     const Tables = {URUNLER: "urunler", ENVANTER: "envanter"};
     return {
         default: {
@@ -129,6 +129,15 @@ describe("Envanter.vue", () => {
         const wrapper = mount(Envanter);
         await flushPromises();
         const table = wrapper.findComponent({ref: "envanterTable"});
+        await table.find("tbody tr").trigger("click");
+        expect(push).toHaveBeenCalled();
+    })
+
+    it('ürün satırına tıklanınca detay sayfasına yönlendirilmeli', async () => {
+        const wrapper = mount(Envanter);
+        await flushPromises();
+        await wrapper.find('.v-tabs button[value="urunler"]').trigger("click");
+        const table = wrapper.findComponent({ref: "urunlerTable"});
         await table.find("tbody tr").trigger("click");
         expect(push).toHaveBeenCalled();
     })

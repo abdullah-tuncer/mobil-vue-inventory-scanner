@@ -53,6 +53,7 @@ vi.mock('@capacitor-community/sqlite', () => ({
 vi.mock("../services/BarkodTaramaService.ts", () => ({
   default: {
     scanBarcode: vi.fn(),
+    startContinuousScan: vi.fn(),
     stopContinuousScan: vi.fn().mockResolvedValue(undefined)
   },
 }));
