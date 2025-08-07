@@ -21,10 +21,12 @@ Barkod tarama özelliği ile envanter ve satış yönetimi yapabileceğiniz mobi
 - 📋 Özelleştirilmiş barkod oluşturma ve çıktı alma
 
 ## Ekran Görüntüleri
-<img src="screenshots/Anasayfa_ss.jpg" width="250">
-<img src="screenshots/Ayarlar_ss.jpg" width="250">
-<img src="screenshots/Envanter_ss.jpg" width="250">
-<img src="screenshots/Satis_ss.jpg" width="250">
+<p float="left">
+    <img src="screenshots/Anasayfa_ss.jpg" width="250">
+    <img src="screenshots/Ayarlar_ss.jpg" width="250">
+    <img src="screenshots/Envanter_ss.jpg" width="250">
+    <img src="screenshots/Satis_ss.jpg" width="250">
+</p>
 
 ## Teknolojiler
 
